@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>두더지 잡기 🔨</title>
+<style>
+  /* ================= 1) CSS = 외관·색·배치·애니메이션 ================= */
+  :root {
+    --bg1: #7dd3fc;      /* 하늘 그라데이션 위 */
+    --bg2: #38bdf8;      /* 하늘 그라데이션 아래 */
+    --grass: #4ade80;    /* 잔디 */
+    --dirt: #92400e;     /* 흙 구멍 */
+    --dirt-dark: #6b3410;
+    --panel: #ffffff;
+    --ink: #1f2937;
+    --accent: #f97316;   /* 포인트 주황 */
+    --gold: #fbbf24;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background: linear-gradient(180deg, var(--bg1), var(--bg2));
+    color: var(--ink);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 18px 14px 40px; user-select: none;
+  }
+  h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); margin: 6px 0 2px; text-shadow: 0 2px 0 rgba(255,255,255,.5); }
+  .subtitle { margin: 0 0 16px; color: #0c4a6e; font-weight: 600; font-size: 0.95rem; }
+
+  /* 상단 점수판 */
+  .hud {
+    display: flex; gap: 10px; width: 100%; max-width: 440px; margin-bottom: 14px;
+  }
+  .stat {
+    flex: 1; background: var(--panel); border-radius: 14px; padding: 10px 8px;
+    text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,.12);
+  }
+  .stat .label { font-size: 0.72rem; color: #6b7280; font-weight: 700; letter-spacing: .04em; }
+  .stat .value { font-size: 1.5rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat.time .value { color: var(--accent); }
+  .stat.best .value { color: #d97706; }
+
+  /* 게임판 (3x3) */
+  .board {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    width: 100%; max-width: 440px;
+    background: var(--grass);
+    padding: 18px; border-radius: 22px;
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.12), 0 10px 24px rgba(0,0,0,.2);
+  }
+  .hole {
+    position: relative; aspect-ratio: 1 / 1;
+    background: radial-gradient(ellipse at 50% 35%, var(--dirt) 40%, var(--dirt-dark) 100%);
+    border-radius: 50%;
+    overflow: hidden; cursor: pointer;
+    box-shadow: inset 0 8px 14px rgba(0,0,0,.45);
+  }
+  /* 두더지 — 기본은 구멍 아래에 숨어 있음 */
+  .mole {
+    position: absolute; left: 8%; bottom: -100%;
+    width: 84%; height: 84%;
+    transition: bottom 0.12s ease-out;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(2.2rem, 11vw, 3.4rem);
+    background: #a16207; border-radius: 50% 50% 45% 45%;
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.2);
+  }
+  /* JS가 up 클래스를 붙이면 두더지가 올라옴 */
+  .hole.up .mole { bottom: 4%; }
+  /* 맞았을 때 별 표시 */
+  .hole.bonk .mole { background: #16a34a; }
+
+  /* 흙 언덕(구멍 앞을 살짝 가림) */
+  .hole::after {
+    content: ""; position: absolute; left: -5%; bottom: -18%;
+    width: 110%; height: 40%;
+    background: var(--dirt-dark); border-radius: 50%;
+    box-shadow: 0 -2px 6px rgba(0,0,0,.3);
+  }
+
+  /* 버튼 */
+  .controls { margin-top: 22px; display: flex; gap: 12px; }
+  button {
+    font-family: inherit; font-weight: 800; font-size: 1.05rem;
+    border: none; border-radius: 999px; padding: 14px 34px; cursor: pointer;
+    background: var(--accent); color: #fff;
+    box-shadow: 0 5px 0 #c2410c; transition: transform .08s, box-shadow .08s;
+  }
+  button:active { transform: translateY(4px); box-shadow: 0 1px 0 #c2410c; }
+  button:disabled { background: #cbd5e1; box-shadow: 0 5px 0 #94a3b8; cursor: default; }
+
+  /* 게임 시작/종료 안내 오버레이 */
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    background: rgba(2, 44, 74, .75); backdrop-filter: blur(3px);
+    color: #fff; text-align: center; padding: 24px; z-index: 20;
+  }
+  .overlay.hidden { display: none; }
+  .overlay h2 { font-size: clamp(1.8rem, 8vw, 2.8rem); margin: 0; }
+  .overlay p { font-size: 1.05rem; margin: 4px 0 18px; max-width: 320px; line-height: 1.6; }
+  .overlay .final { font-size: 3rem; font-weight: 900; color: var(--gold); margin: 6px 0; }
+  .overlay button { background: var(--gold); color: #7c2d12; box-shadow: 0 5px 0 #d97706; }
+  .overlay button:active { box-shadow: 0 1px 0 #d97706; }
+
+  footer { margin-top: 26px; font-size: 0.8rem; color: #0c4a6e; opacity: .85; text-align: center; }
+
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .score-pop { animation: pop .25s ease; }
+</style>
+</head>
+<body>
+
+  <!-- ================= 2) HTML = 구조·부품 배치 ================= -->
+  <h1>🔨 두더지 잡기</h1>
+  <p class="subtitle">30초 안에 두더지를 최대한 많이 잡으세요!</p>
+
+  <div class="hud">
+    <div class="stat"><div class="label">점수</div><div class="value" id="score">0</div></div>
+    <div class="stat time"><div class="label">남은 시간</div><div class="value" id="time">30</div></div>
+    <div class="stat best"><div class="label">최고 점수</div><div class="value" id="best">0</div></div>
+  </div>
+
+  <div class="board" id="board">
+    <!-- 구멍 9개는 자바스크립트가 자동으로 채워 넣습니다 -->
+  </div>
+
+  <div class="controls">
+    <button id="startBtn">게임 시작</button>
+  </div>
+
+  <footer>
+    HTML · CSS · JavaScript로 만든 나만의 게임 🎮<br>
+    마우스 클릭 또는 화면 터치로 플레이하세요.
+  </footer>
+
+  <!-- 시작 화면 오버레이 -->
+  <div class="overlay" id="overlay">
+    <h2>🐹 두더지 잡기</h2>
+    <p>구멍에서 튀어나오는 두더지를 눌러 잡으세요.<br>제한시간은 30초입니다. 준비됐나요?</p>
+    <button id="overlayBtn">시작하기</button>
+  </div>
+
+<script>
+  /* ================= 3) JavaScript = 게임 제어 로직(PLC) ================= */
+
+  // --- 필요한 화면 요소들을 미리 확보 ---
+  const board     = document.getElementById('board');
+  const scoreEl   = document.getElementById('score');
+  const timeEl    = document.getElementById('time');
+  const bestEl    = document.getElementById('best');
+  const startBtn  = document.getElementById('startBtn');
+  const overlay   = document.getElementById('overlay');
+  const overlayBtn= document.getElementById('overlayBtn');
+
+  const HOLES = 9;          // 구멍 개수 (3x3)
+  const GAME_TIME = 30;     // 제한 시간(초)
+
+  let score = 0;
+  let timeLeft = GAME_TIME;
+  let playing = false;
+  let lastHole = -1;        // 같은 구멍이 연속으로 나오지 않게 기억
+  let moleTimer = null;     // 두더지 등장 반복 타이머
+  let countdown = null;     // 1초 카운트다운 타이머
+
+  // --- 최고 점수는 브라우저에 저장해서 다시 와도 유지 ---
+  let best = 0;
+  try { best = Number(localStorage.getItem('mole-best')) || 0; } catch (e) {}
+  bestEl.textContent = best;
+
+  // --- 구멍 9개를 HTML로 만들어 게임판에 넣는다 ---
+  const holes = [];
+  for (let i = 0; i < HOLES; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.innerHTML = '<div class="mole">🐹</div>';
+    // 구멍(또는 두더지)을 누르면 잡기 판정
+    hole.addEventListener('click', () => whack(hole));
+    board.appendChild(hole);
+    holes.push(hole);
+  }
+
+  // --- 짧은 '띵' 효과음 (외부 파일 없이 코드로 생성) ---
+  function beep(freq) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'square';
+      osc.connect(gain); gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.start(); osc.stop(ctx.currentTime + 0.12);
+    } catch (e) { /* 소리 미지원 환경은 그냥 무시 */ }
+  }
+
+  // --- 랜덤 구멍 하나에서 두더지를 잠깐 올렸다 내린다 ---
+  function popMole() {
+    let idx;
+    do { idx = Math.floor(Math.random() * HOLES); } while (idx === lastHole);
+    lastHole = idx;
+
+    const hole = holes[idx];
+    hole.classList.add('up');
+
+    // 남은 시간이 적을수록 두더지가 빨리 사라져 난이도 상승
+    const stay = Math.max(600, 1200 - (GAME_TIME - timeLeft) * 20);
+    setTimeout(() => hole.classList.remove('up'), stay);
+  }
+
+  // --- 두더지를 눌렀을 때: 올라와 있으면 점수 +1 ---
+  function whack(hole) {
+    if (!playing) return;
+    if (!hole.classList.contains('up')) return; // 안 올라온 구멍은 무효
+    hole.classList.remove('up');
+    hole.classList.add('bonk');
+    setTimeout(() => hole.classList.remove('bonk'), 150);
+
+    score++;
+    scoreEl.textContent = score;
+    scoreEl.classList.remove('score-pop');
+    void scoreEl.offsetWidth;      // 애니메이션 재시작 트릭
+    scoreEl.classList.add('score-pop');
+    beep(880);
+  }
+
+  // --- 게임 시작 ---
+  function startGame() {
+    score = 0; timeLeft = GAME_TIME; playing = true;
+    scoreEl.textContent = '0';
+    timeEl.textContent = timeLeft;
+    overlay.classList.add('hidden');
+    startBtn.disabled = true;
+    startBtn.textContent = '진행 중…';
+
+    // 두더지 등장 반복 (0.8초마다)
+    popMole();
+    moleTimer = setInterval(popMole, 800);
+
+    // 1초마다 시간 감소
+    countdown = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  }
+
+  // --- 게임 종료 ---
+  function endGame() {
+    playing = false;
+    clearInterval(moleTimer);
+    clearInterval(countdown);
+    holes.forEach(h => h.classList.remove('up'));
+    startBtn.disabled = false;
+    startBtn.textContent = '다시 시작';
+
+    // 최고 점수 갱신 및 저장
+    if (score > best) {
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('mole-best', String(best)); } catch (e) {}
+    }
+    beep(320);
+
+    // 결과 오버레이 표시
+    overlay.innerHTML =
+      '<h2>⏰ 게임 종료!</h2>' +
+      '<div class="final">' + score + '점</div>' +
+      '<p>' + resultMessage(score) + '</p>' +
+      '<button id="againBtn">다시 도전!</button>';
+    overlay.classList.remove('hidden');
+    document.getElementById('againBtn').addEventListener('click', startGame);
+  }
+
+  // --- 점수에 따른 응원 메시지 ---
+  function resultMessage(s) {
+    if (s >= 25) return '🏆 두더지 사냥의 달인! 대단해요!';
+    if (s >= 15) return '👏 훌륭해요! 조금만 더 하면 달인!';
+    if (s >= 8)  return '🙂 좋아요! 한 번 더 도전해볼까요?';
+    return '💪 연습하면 금방 늘어요. 다시 도전!';
+  }
+
+  // --- 버튼 연결 ---
+  startBtn.addEventListener('click', startGame);
+  overlayBtn.addEventListener('click', startGame);
+</script>
+</body>
+</html>

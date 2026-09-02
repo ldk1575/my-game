@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>숫자 맞추기 게임</title>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --card: #ffffff;
+    --ink: #1c2333;
+    --muted: #6b7385;
+    --line: #dde2ea;
+    --accent: #3d5afe;
+    --up: #d94f2b;
+    --down: #1f7ae0;
+    --win: #17915c;
+    --warn: #b0392c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+  }
+
+  .card {
+    width: 380px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 10px 30px -18px rgba(28, 35, 51, .5);
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 24px;
+  }
+
+  .desc {
+    margin: 0 0 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* 입력 영역 */
+  .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  #guess {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 14px;
+    font-size: 17px;
+    font-family: inherit;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+  }
+
+  #guess:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+
+  /* 입력창의 위/아래 화살표 제거 */
+  #guess::-webkit-outer-spin-button,
+  #guess::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #guess { -moz-appearance: textfield; }
+
+  button {
+    padding: 11px 18px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  button:hover { filter: brightness(1.08); }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button:disabled { background: #b9bfcc; cursor: not-allowed; }
+
+  #restartBtn {
+    width: 100%;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    font-weight: 500;
+  }
+
+  #restartBtn:hover { background: #f3f5f9; color: var(--ink); }
+
+  /* 힌트 */
+  #hint {
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .hint-main {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+
+  .hint-sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .up   .hint-main { color: var(--up); }
+  .down .hint-main { color: var(--down); }
+  .win  .hint-main { color: var(--win); font-size: 26px; }
+  .warn .hint-main { color: var(--warn); font-size: 15px; font-weight: 600; }
+  .idle .hint-main { color: var(--muted); font-size: 15px; font-weight: 500; }
+
+  /* 상태 표시줄 */
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 2px;
+    margin-bottom: 18px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .stats b {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 애니메이션 */
+  @keyframes pop   { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  .animate-pop   { animation: pop .22s ease-out; }
+  .animate-shake { animation: shake .28s ease-in-out; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pop, .animate-shake { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="card">
+    <h1>숫자 맞추기 게임</h1>
+    <p class="desc">1~100 사이의 숫자를 맞춰보세요!</p>
+
+    <div class="row">
+      <input type="number" id="guess" min="1" max="100" placeholder="숫자 입력" autocomplete="off" autofocus>
+      <button id="checkBtn" type="button">확인</button>
+    </div>
+
+    <div id="hint" class="idle" aria-live="polite">
+      <span class="hint-main">숫자를 입력하고 확인을 눌러주세요</span>
+      <span class="hint-sub"></span>
+    </div>
+
+    <div class="stats">
+      <span>시도 횟수: <b id="tries">0</b>번</span>
+      <span>최고 기록: <b id="best">-</b></span>
+    </div>
+
+    <button id="restartBtn" type="button">다시 하기</button>
+  </main>
+
+<script>
+  const MIN = 1;
+  const MAX = 100;
+  const BEST_KEY = 'numberGuessingBest';
+
+  const guessInput = document.getElementById('guess');
+  const checkBtn   = document.getElementById('checkBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const hintBox    = document.getElementById('hint');
+  const hintMain   = hintBox.querySelector('.hint-main');
+  const hintSub    = hintBox.querySelector('.hint-sub');
+  const triesEl    = document.getElementById('tries');
+  const bestEl     = document.getElementById('best');
+
+  let answer;    // 이번 판의 정답
+  let tries;     // 시도 횟수
+  let finished;  // 정답을 맞춰서 게임이 끝났는지
+
+  // 힌트 영역을 갱신한다. type 은 idle | up | down | win | warn
+  function showHint(type, main, sub, animation) {
+    hintBox.className = type;
+    hintMain.textContent = main;
+    hintSub.textContent = sub || '';
+
+    // 같은 애니메이션을 연속으로 재생하려면 클래스를 한 번 지웠다 다시 붙여야 한다
+    hintBox.classList.remove('animate-pop', 'animate-shake');
+    if (animation) {
+      void hintBox.offsetWidth;
+      hintBox.classList.add(animation);
+    }
+  }
+
+  // 브라우저가 저장소를 막아둔 경우(시크릿 모드 등)에도 게임은 계속 돌아가야 하므로
+  // localStorage 접근은 항상 try/catch 로 감싼다
+  function loadBest() {
+    try {
+      return Number(localStorage.getItem(BEST_KEY)) || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function storeBest(count) {
+    try {
+      localStorage.setItem(BEST_KEY, String(count));
+      return true;
+    } catch (e) {
+      return false; // 저장할 수 없으면 기록 갱신은 조용히 포기한다
+    }
+  }
+
+  // 최고 기록(가장 적은 시도 횟수)을 화면에 표시한다
+  function renderBest() {
+    const best = loadBest();
+    bestEl.textContent = best > 0 ? best + '번' : '-';
+  }
+
+  // 이번 기록이 최고 기록이면 저장한다. 갱신했으면 true 를 돌려준다
+  function saveBest(count) {
+    const best = loadBest();
+    if (best > 0 && best <= count) return false;
+    if (!storeBest(count)) return false;
+    renderBest();
+    return true;
+  }
+
+  // 새 게임 시작 (정답 재생성, 시도 횟수 초기화)
+  function startGame() {
+    answer = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+    tries = 0;
+    finished = false;
+
+    triesEl.textContent = '0';
+    guessInput.value = '';
+    guessInput.disabled = false;
+    checkBtn.disabled = false;
+
+    showHint('idle', '숫자를 입력하고 확인을 눌러주세요');
+    guessInput.focus();
+  }
+
+  // 잘못된 입력 안내 (시도 횟수는 올리지 않는다)
+  function warn(message) {
+    showHint('warn', message, '', 'animate-shake');
+    guessInput.focus();
+    guessInput.select();
+  }
+
+  // 확인 버튼을 눌렀을 때
+  function checkGuess() {
+    if (finished) return;
+
+    const raw = guessInput.value.trim();
+
+    if (raw === '') return warn('숫자를 입력해 주세요.');
+
+    const num = Number(raw);
+    if (!Number.isInteger(num)) return warn('1~100 사이의 정수를 입력해 주세요.');
+    if (num < MIN || num > MAX) return warn(MIN + '부터 ' + MAX + ' 사이의 숫자만 입력할 수 있어요.');
+
+    tries++;
+    triesEl.textContent = tries;
+
+    if (num < answer) {
+      showHint('up', 'UP', num + ' 보다 큰 숫자예요.', 'animate-pop');
+    } else if (num > answer) {
+      showHint('down', 'DOWN', num + ' 보다 작은 숫자예요.', 'animate-pop');
+    } else {
+      finished = true;
+      guessInput.disabled = true;
+      checkBtn.disabled = true;
+
+      const isNewBest = saveBest(tries);
+      const sub = isNewBest
+        ? '최고 기록을 새로 세웠어요!'
+        : '다시 하기를 눌러 새 게임을 시작하세요.';
+
+      showHint('win', '정답! ' + answer + ' (' + tries + '번 만에 성공)', sub, 'animate-pop');
+      restartBtn.focus();
+      return;
+    }
+
+    guessInput.value = '';
+    guessInput.focus();
+  }
+
+  checkBtn.addEventListener('click', checkGuess);
+  restartBtn.addEventListener('click', startGame);
+
+  // 엔터 키로도 확인할 수 있게
+  guessInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') checkGuess();
+  });
+
+  renderBest();
+  startGame();
+</script>
+
+</body>
+</html>

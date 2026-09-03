@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나의 AI 협업 성향은? — 20문항 정밀 진단</title>
+<style>
+  :root{
+    --bg:#0E1117;
+    --card:#161B26;
+    --card2:#1D2331;
+    --line:#2A3140;
+    --ink:#E8ECF3;
+    --muted:#8D97A8;
+    --violet:#8B7CF6;
+    --teal:#3DD6C0;
+    --gold:#F5C25B;
+    --coral:#F2775F;
+    --sans:"Pretendard","Malgun Gothic",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:34rem;margin:0 auto;padding:1.5rem 1.1rem 3rem}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.3rem}
+  h1{margin:0 0 .5rem;font-size:1.5rem;line-height:1.35;letter-spacing:-.02em;text-wrap:balance}
+  .grad{
+    background:linear-gradient(90deg,var(--violet),var(--teal));
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  p{margin:0 0 .8rem}
+  .lead{color:var(--muted);font-size:.95rem}
+
+  button{
+    font-family:inherit;font-size:1rem;font-weight:700;
+    border:none;border-radius:10px;cursor:pointer;
+    padding:.9rem 1.2rem;width:100%;color:#0E1117;
+    background:linear-gradient(90deg,var(--gold),var(--coral));
+  }
+  button:hover{filter:brightness(1.07)}
+  button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+  button.ghost:hover{background:var(--card2);color:var(--ink)}
+
+  .axes{
+    list-style:none;margin:1.1rem 0 1.4rem;padding:1rem 1.1rem;
+    background:var(--card2);border:1px solid var(--line);border-radius:10px;font-size:.92rem;
+  }
+  .axes li{display:flex;gap:.6rem;margin-bottom:.5rem}
+  .axes li:last-child{margin-bottom:0}
+  .axes .dot{color:var(--teal);flex:none}
+  .axes b{color:var(--ink)}
+  .axes span{color:var(--muted)}
+
+  .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
+  .step{font-family:var(--mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .axis-tag{font-size:.75rem;color:var(--violet);font-weight:600}
+  .bar{height:6px;background:var(--card2);border-radius:99px;overflow:hidden;margin-bottom:1.6rem}
+  .bar i{display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--violet),var(--teal));transition:width .25s ease}
+  @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+
+  .q{font-size:1.15rem;font-weight:700;line-height:1.5;margin:0 0 1.2rem;text-wrap:balance}
+  .opts{display:grid;gap:.7rem}
+  .opt{
+    text-align:left;width:100%;background:var(--card2);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;
+    padding:.95rem 1.1rem;font-weight:500;font-size:.98rem;line-height:1.5;
+  }
+  .opt:hover{border-color:var(--violet);background:#222839}
+  /* 보기 문장 안의 명령어·파일명을 코드처럼 보이게 한다 */
+  .opt .cmd{
+    font-family:var(--mono);font-size:.86em;font-weight:600;
+    color:var(--teal);background:rgba(61,214,192,.10);
+    border:1px solid rgba(61,214,192,.32);
+    border-radius:5px;padding:.05em .4em;
+    white-space:nowrap;
+  }
+  .back{margin-top:1.2rem}
+
+  .code{font-family:var(--mono);font-size:2.6rem;font-weight:500;
+    letter-spacing:.12em;text-align:center;margin:.2rem 0 .1rem}
+  .tname{text-align:center;font-size:1.35rem;font-weight:800;margin:0 0 .3rem;letter-spacing:-.02em}
+  .tline{text-align:center;color:var(--muted);font-size:.95rem;margin:0 0 1.4rem}
+
+  .meters{display:grid;gap:.8rem;margin:0 0 1.5rem}
+  .meter .lab{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem}
+  .meter .lab .l{color:var(--muted)}
+  .meter .lab .win{color:var(--teal);font-weight:600}
+  .meter .track{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;display:flex}
+  .meter .track i{display:block;height:100%}
+  .meter .track .a{background:linear-gradient(90deg,var(--violet),#6D5EE0)}
+  .meter .track .b{background:var(--line)}
+  .meter .axis-name{
+    font-size:.7rem;color:var(--violet);font-weight:600;
+    letter-spacing:.06em;margin-bottom:.3rem;
+  }
+
+  .block{background:var(--card2);border:1px solid var(--line);
+    border-radius:10px;padding:.9rem 1.05rem;margin-bottom:.7rem}
+  .block h3{margin:0 0 .35rem;font-size:.8rem;letter-spacing:.06em;
+    color:var(--muted);font-weight:600;text-transform:uppercase}
+  .block p{margin:0;font-size:.96rem}
+  .block.next{border-color:var(--gold)}
+  .block.next h3{color:var(--gold)}
+
+  .sharednote{
+    background:var(--card2);border:1px solid var(--violet);
+    border-radius:10px;padding:.8rem 1rem;margin:0 0 1.2rem;
+    font-size:.9rem;color:var(--muted);line-height:1.6;
+  }
+  .sharednote b{color:var(--ink)}
+
+  .stats{margin:1.4rem 0 1.2rem;padding:.9rem 1.05rem;background:var(--card2);
+    border:1px dashed var(--line);border-radius:10px;font-size:.9rem;color:var(--muted)}
+  .stats b{color:var(--teal)}
+  .stats .tagmock{display:inline-block;font-family:var(--mono);font-size:.62rem;
+    letter-spacing:.1em;color:var(--coral);border:1px solid var(--coral);
+    border-radius:4px;padding:.05rem .3rem;margin-left:.35rem;vertical-align:.1em}
+
+  .btns{display:grid;gap:.6rem;margin-top:1.2rem}
+  footer{margin-top:1.6rem;text-align:center;font-size:.75rem;color:var(--muted);line-height:1.6}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= 시작 화면 ================= -->
+  <section id="intro" class="card">
+    <h1>나의 <span class="grad">AI 협업 성향</span>은<br>어떤 타입일까요?</h1>
+    <p class="lead">AI와 함께 일할 때 실제로 부딪히는 20개 상황을 드립니다. 네 가지 축으로 나눠 16가지 유형 중 하나를 알려드립니다.</p>
+
+    <ul class="axes">
+      <li><span class="dot">◆</span><span><b>역할</b> — 드라이버(D) 직접 손댄다 / 네비게이터(N) 지시하고 판단한다</span></li>
+      <li><span class="dot">◆</span><span><b>착수 방식</b> — 명세형(P) 정하고 시작한다 / 반복형(T) 만들며 정한다</span></li>
+      <li><span class="dot">◆</span><span><b>통제 방식</b> — 검증형(V) 관문마다 확인한다 / 위임형(A) 맡기고 흐르게 둔다</span></li>
+      <li><span class="dot">◆</span><span><b>목적</b> — 학습형(L) 이해가 남아야 한다 / 산출형(S) 결과가 나와야 한다</span></li>
+    </ul>
+
+    <p class="lead"><b>정답은 없습니다.</b> 두 선택지 모두 실무에서 쓰이는 방식입니다. 어느 쪽이 옳은지가 아니라, <b>내가 어디에 시간을 쓰는지</b>를 고르시면 됩니다.</p>
+
+    <button id="startBtn" type="button">진단 시작하기 (20문항 · 약 2분)</button>
+  </section>
+
+  <!-- ================= 질문 화면 ================= -->
+  <section id="quiz" class="card" hidden>
+    <div class="top">
+      <span class="step" id="step">1 / 20</span>
+      <span class="axis-tag" id="axisTag"></span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <p class="q" id="question" aria-live="polite"></p>
+    <div class="opts" id="options"></div>
+    <button class="ghost back" id="backBtn" type="button">이전 질문</button>
+  </section>
+
+  <!-- ================= 결과 화면 ================= -->
+  <section id="result" class="card" hidden>
+    <p class="code grad" id="code"></p>
+    <h2 class="tname" id="tname"></h2>
+    <p class="tline" id="tline"></p>
+
+    <div class="meters" id="meters"></div>
+
+    <p class="sharednote" id="sharedNote" hidden>
+      공유된 결과입니다. 축별 비율은 진단한 사람의 것이라 표시되지 않습니다.
+      아래 <b>나도 진단해보기</b>를 누르면 20문항을 직접 풀 수 있습니다.
+    </p>
+
+    <div class="block"><h3>강점</h3><p id="strong"></p></div>
+    <div class="block"><h3>주의할 점</h3><p id="careful"></p></div>
+    <div class="block next"><h3>다음 한 걸음</h3><p id="next"></p></div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="btns">
+      <button id="againBtn" type="button">다시 진단하기</button>
+      <button class="ghost" id="copyBtn" type="button">결과 링크 복사</button>
+    </div>
+  </section>
+
+  <footer>
+    재미로 보는 성향 진단입니다. 정답이 있는 검사가 아닙니다.
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   나의 AI 협업 성향 테스트
+   - 4개 축 × 5문항 = 총 20문항
+   - 각 축에서 더 많이 고른 쪽의 글자를 모아 4글자 코드를 만든다
+   - 집계(통계)는 지금 목업이며, 백엔드가 준비되면 fetchStats() 한 곳만 교체한다
+   - 주제를 바꾸려면 QUESTIONS 와 TYPES, AXES 만 갈아 끼우면 된다
+   ============================================================ */
+
+/* ---------- 축 정의 ---------- */
+const AXES = [
+  { key: 'role',   name: '역할',      a: 'D', b: 'N', aName: '드라이버', bName: '네비게이터' },
+  { key: 'order',  name: '착수 방식', a: 'P', b: 'T', aName: '명세형',   bName: '반복형' },
+  { key: 'check',  name: '통제 방식', a: 'V', b: 'A', aName: '검증형',   bName: '위임형' },
+  { key: 'goal',   name: '목적',      a: 'L', b: 'S', aName: '학습형',   bName: '산출형' },
+];
+
+/* ---------- 질문 (축별 5문항) ---------- */
+const QUESTIONS = [
+  // 역할 — 드라이버(D) / 네비게이터(N)
+  { axis: 'role', q: 'AI가 500줄짜리 변경을 한 번에 내놨다. 의도와 조금 다르다.',
+    a: ['필요한 부분만 골라 내가 직접 고친다',
+        '변경을 전부 되돌리고, 요구를 다시 적어 새로 받는다'] },
+  { axis: 'role', q: '세 파일에 걸친 구조 변경이 필요하다.',
+    a: ['구조는 내가 잡고, 이름 바꾸기 같은 반복 작업만 맡긴다',
+        '`@파일`로 세 개를 물려주고 목표 구조를 설명해 한 번에 옮기게 한다'] },
+  { axis: 'role', q: 'AI가 지은 함수 이름이 프로젝트 관례와 다르다.',
+    a: ['에디터에서 내가 일괄로 바꾼다',
+        '`CLAUDE.md`에 관례를 적어 두고 다시 생성하게 한다'] },
+  { axis: 'role', q: '재현이 잘 안 되는 버그를 만났다.',
+    a: ['로그를 직접 심어가며 범위를 좁힌다',
+        '재현 절차와 에러 로그를 붙여 원인 후보를 먼저 받는다'] },
+  { axis: 'role', q: '어느 구간이 느린지 찾아야 한다.',
+    a: ['측정 도구를 직접 돌려 본다',
+        '코드와 응답 시간을 주고 의심 구간을 먼저 받는다'] },
+
+  // 착수 방식 — 명세형(P) / 반복형(T)
+  { axis: 'order', q: '요구가 절반만 정해진 기능을 시작해야 한다.',
+    a: ['계획 모드로 나머지를 먼저 확정하고 착수한다',
+        '정해진 절반으로 만들며 나머지를 발견한다'] },
+  { axis: 'order', q: 'AI에게 서버 창구(API)를 만들라고 할 때',
+    a: ['요청·응답 `JSON` 모양을 문서로 고정하고 시작한다',
+        '일단 만들게 한 뒤 화면에 붙여 보며 모양을 맞춘다'] },
+  { axis: 'order', q: '새 저장소에서 작업을 시작한다.',
+    a: ['`/init`으로 `CLAUDE.md`를 만들어 규칙을 먼저 심는다',
+        '바로 작업하고, 걸리는 규칙이 나올 때마다 적는다'] },
+  { axis: 'order', q: '프롬프트가 두 번 연속 엉뚱한 결과를 냈다.',
+    a: ['처음부터 구조를 잡아 요구를 새로 쓴다',
+        '마지막 결과를 붙잡고 조금씩 방향을 튼다'] },
+  { axis: 'order', q: '대화가 길어져 AI가 앞 내용을 잊기 시작했다.',
+    a: ['`/clear` 대화를 비우고, 정리해 둔 요구사항을 다시 물린다',
+        '`/compact` 지금까지 대화를 요약해 압축하고 그대로 이어간다'] },
+
+  // 통제 방식 — 검증형(V) / 위임형(A)
+  { axis: 'check', q: 'AI가 파일을 고치겠다고 승인을 물어본다.',
+    a: ['무엇을 바꾸는지 변경 내용을 읽고 승인한다',
+        '흐름이 끊기니 대체로 그냥 승인한다'] },
+  { axis: 'check', q: 'AI가 테스트 코드까지 함께 써 왔다.',
+    a: ['그 테스트가 의미 있는지 내가 읽어 본다',
+        '통과했다면 그대로 신뢰한다'] },
+  { axis: 'check', q: '결과물에 라이브러리 하나가 새로 추가돼 있다.',
+    a: ['`package.json`을 열어 왜 필요한지 확인하고 대안을 따진다',
+        '동작에 문제 없으면 두고 넘어간다'] },
+  { axis: 'check', q: '마감이 오늘인데 확인할 시간이 부족하다.',
+    a: ['핵심 흐름만이라도 직접 돌려 본다',
+        '내보내고 문제가 생기면 바로 대응한다'] },
+  { axis: 'check', q: '커밋을 어떻게 끊을지 정할 때',
+    a: ['단계마다 끊어 되돌릴 지점을 남긴다',
+        '기능이 끝나면 한 번에 묶는다'] },
+
+  // 목적 — 학습형(L) / 산출형(S)
+  { axis: 'goal', q: 'AI가 내가 모르는 방식으로 문제를 풀었다.',
+    a: ['왜 그 방식인지 이해할 때까지 파고든다',
+        '잘 돌아가니 그대로 쓰고 넘어간다'] },
+  { axis: 'goal', q: '같은 종류의 작업이 앞으로도 반복될 것 같다.',
+    a: ['이번에 원리를 익혀 다음엔 직접 한다',
+        '`CLAUDE.md`나 프롬프트로 재사용할 수 있게 적어 둔다'] },
+  { axis: 'goal', q: '예상보다 시간이 남았다.',
+    a: ['만든 것의 구조를 다시 읽어 본다',
+        '기능을 하나 더 붙인다'] },
+  { axis: 'goal', q: '처음 쓰는 도구를 붙여야 한다.',
+    a: ['공식 문서를 먼저 훑는다',
+        '동작하는 예제를 붙여 놓고 필요할 때 찾는다'] },
+  { axis: 'goal', q: '프로젝트가 끝난 뒤 남기고 싶은 것은',
+    a: ['다음에 혼자서도 할 수 있는 이해',
+        '실제로 돌아가는 결과물'] },
+];
+
+/* ---------- 16가지 유형 ---------- */
+const TYPES = {
+  DPVL: { name: '설계도 든 장인', line: '직접 만들고, 계획하고, 검증하고, 배웁니다. 가장 단단한 조합입니다.',
+    strong: '결과와 이해를 동시에 남깁니다. 남에게 설명할 수 있습니다.',
+    careful: '꼼꼼함이 지나쳐 속도를 잃을 수 있습니다.',
+    next: '한 번은 "검증을 절반만 하고 넘어가기"를 시도해 보세요.' },
+  DPVS: { name: '속도 붙은 실무자', line: '손이 빠르고 계획도 있고 검증도 합니다. 다만 이해는 뒤로 미룹니다.',
+    strong: '믿을 수 있는 결과를 제 시간에 냅니다.',
+    careful: '왜 그렇게 됐는지 모르는 결과물이 쌓입니다.',
+    next: '완성 후 5분만 "이 부분이 왜 필요했나"를 적어 보세요.' },
+  DPAL: { name: '부지런한 조립가', line: '직접 만들고 계획도 세우며 배웁니다. 확인은 AI를 믿고 넘어갑니다.',
+    strong: '손이 부지런하고 배우려는 마음이 큽니다.',
+    careful: '검증하지 않으면 잘못 배운 것도 그대로 남습니다.',
+    next: 'AI가 준 것에 일부러 틀린 값을 넣어 한 번 시험해 보세요.' },
+  DPAS: { name: '마감 지키는 생산자', line: '계획대로 직접 만들어 제 시간에 냅니다.',
+    strong: '약속한 것을 반드시 냅니다. 일이 밀리지 않습니다.',
+    careful: '미룬 문제가 나중에 한꺼번에 터집니다.',
+    next: '내보내기 전 점검 항목 세 개만 정해 두세요.' },
+  DTVL: { name: '손으로 배우는 탐험가', line: '만들어 보며 배우고 확인도 합니다. 계획은 나중입니다.',
+    strong: '배우는 속도가 빠르고 시도를 겁내지 않습니다.',
+    careful: '계획이 없어 같은 길을 두 번 갑니다.',
+    next: '시작 전에 목표 한 줄만 적어 보세요.' },
+  DTVS: { name: '즉흥 수리공', line: '상황을 보고 바로 고칩니다. 확인은 합니다.',
+    strong: '급한 문제를 가장 빠르게 잡습니다.',
+    careful: '임시로 막은 것이 그대로 남습니다.',
+    next: '급하게 고친 곳에 표시를 남겨 두세요.' },
+  DTAL: { name: '놀며 익히는 메이커', line: '이것저것 만들어 보며 즐겁게 배웁니다.',
+    strong: '시도 횟수가 많아 감각이 빠르게 늘어납니다.',
+    careful: '완성까지 가는 일이 드뭅니다.',
+    next: '작은 것 하나를 끝까지 내보내 보세요.' },
+  DTAS: { name: '일단 만드는 해결사', line: '정하는 시간보다 만드는 시간에 씁니다. 가장 빠르게 움직이는 유형입니다.',
+    strong: '무엇이든 일단 돌아가게 만듭니다. 시작이 빠릅니다.',
+    careful: '화면은 금방 살아나지만 그다음 벽에 부딪힙니다.',
+    next: '내보내기 전 "비밀 키"와 "서버 검증" 두 가지만 확인해 보세요.' },
+  NPVL: { name: '명세 쓰는 감독', line: '무엇을 만들지 문서로 정하고, 받은 것을 검증하고, 원리까지 이해합니다.',
+    strong: 'AI를 가장 잘 쓰는 자리입니다. 지시가 정확하고 판단이 섭니다.',
+    careful: '준비가 길어져 시작이 늦어질 수 있습니다.',
+    next: '명세를 절반만 쓰고 먼저 한 조각을 만들어 보세요.' },
+  NPVS: { name: '결과를 책임지는 기획자', line: '계획을 주고, 결과를 따지고, 반드시 내보냅니다.',
+    strong: '맡기면 결과가 나옵니다. 신뢰를 줍니다.',
+    careful: '이해가 얇아 다음 판단이 어려워집니다.',
+    next: '이번 프로젝트에서 개념 하나만 끝까지 이해해 보세요.' },
+  NPAL: { name: '큰 그림 학습자', line: '방향을 정하고 이해하는 데 시간을 쓰고, 실행과 확인은 AI에 맡깁니다.',
+    strong: '전체를 보는 눈이 있습니다. 무엇이 중요한지 압니다.',
+    careful: '확인 없이 배우면 잘못된 것도 함께 익힙니다.',
+    next: 'AI 답변에 "근거가 뭐야?"를 한 번 붙여 보세요.' },
+  NPAS: { name: '속도 내는 발주자', line: '정리해서 맡기고 빠르게 받습니다.',
+    strong: '일이 빨리 굴러갑니다. 결정이 지체되지 않습니다.',
+    careful: '문제가 있어도 모른 채 내보낼 수 있습니다.',
+    next: '내보내기 전 점검을 AI에게 시키는 문장을 저장해 두세요.' },
+  NTVL: { name: '질문으로 파는 인터뷰어', line: '대화로 좁혀 가며 캐묻고 배웁니다.',
+    strong: '좋은 질문을 던집니다. 이해가 깊어집니다.',
+    careful: '대화가 길어져 결론이 안 날 때가 있습니다.',
+    next: '"다섯 번 안에 결정한다"는 규칙을 정해 보세요.' },
+  NTVS: { name: '까다로운 의뢰인', line: '말로 지시하고 결과를 깐깐하게 봅니다.',
+    strong: '품질 기준이 높아 어설픈 결과가 안 나갑니다.',
+    careful: '요구가 매번 바뀌면 AI가 헤맵니다.',
+    next: '요구를 문서 한 장으로 고정해 보세요.' },
+  NTAL: { name: '호기심 많은 대화자', line: '편하게 물어보며 새로운 것을 알아갑니다.',
+    strong: 'AI와 대화하는 데 거리낌이 없습니다. 배움이 즐겁습니다.',
+    careful: '어디까지가 사실인지 구분이 흐려집니다.',
+    next: '중요한 답은 출처를 한 번 확인해 보세요.' },
+  NTAS: { name: '믿고 맡기는 의뢰인', line: '짧게 말하고 나온 결과를 대체로 받아들입니다.',
+    strong: '결정이 빠르고 일이 막히지 않습니다.',
+    careful: 'AI가 틀렸을 때 알아챌 장치가 없습니다.',
+    next: '"서버에서도 다시 확인해 줘" 같은 한마디를 습관으로 만들어 보세요.' },
+};
+
+/* ---------- 상태 ---------- */
+let index = 0;
+const picks = [];
+
+const $ = (id) => document.getElementById(id);
+const introEl = $('intro'), quizEl = $('quiz'), resultEl = $('result');
+
+const axisOf = (key) => AXES.find(x => x.key === key);
+
+/* 보기 문장 안의 `코드` 표시를 실제 code 요소로 바꿔 넣는다.
+   innerHTML 을 쓰지 않으므로 문장에 태그가 섞여도 안전하다. */
+function renderInline(target, text) {
+  text.split('`').forEach((part, i) => {
+    if (i % 2 === 1) {
+      const c = document.createElement('code');
+      c.className = 'cmd';
+      c.textContent = part;
+      target.appendChild(c);
+    } else if (part) {
+      target.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
+function show(section) {
+  [introEl, quizEl, resultEl].forEach(el => { el.hidden = (el !== section); });
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/* ---------- 질문 그리기 ---------- */
+function renderQuestion() {
+  const item = QUESTIONS[index];
+  const axis = axisOf(item.axis);
+
+  $('step').textContent = (index + 1) + ' / ' + QUESTIONS.length;
+  $('axisTag').textContent = axis.name;
+  $('barFill').style.width = (index / QUESTIONS.length * 100) + '%';
+  $('question').textContent = item.q;
+
+  const box = $('options');
+  box.innerHTML = '';
+  item.a.forEach((text, side) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'opt';
+
+    renderInline(btn, text);
+    btn.addEventListener('click', () => choose(side));
+    box.appendChild(btn);
+  });
+
+  $('backBtn').hidden = (index === 0);
+}
+
+function choose(side) {
+  picks[index] = side;
+  index++;
+  if (index >= QUESTIONS.length) finish();
+  else renderQuestion();
+}
+
+function goBack() {
+  if (index > 0) { index--; renderQuestion(); }
+}
+
+/* ---------- 채점 ---------- */
+function score() {
+  const tally = {};
+  AXES.forEach(x => { tally[x.key] = { a: 0, b: 0 }; });
+
+  QUESTIONS.forEach((item, i) => {
+    if (picks[i] === 0) tally[item.axis].a++;
+    else tally[item.axis].b++;
+  });
+
+  // 동점이면 a쪽으로 둔다 (문항이 5개라 실제로는 동점이 나오지 않음)
+  const code = AXES.map(x => (tally[x.key].a >= tally[x.key].b ? x.a : x.b)).join('');
+  return { code, tally };
+}
+
+/* ---------- 축별 막대 ---------- */
+function renderMeters(tally) {
+  const box = $('meters');
+  box.innerHTML = '';
+
+  AXES.forEach(axis => {
+    const t = tally[axis.key];
+    const total = t.a + t.b;
+    const pa = Math.round(t.a / total * 100);
+    const aWins = t.a >= t.b;
+
+    const el = document.createElement('div');
+    el.className = 'meter';
+    el.innerHTML =
+      '<div class="axis-name">' + axis.name + '</div>' +
+      '<div class="lab">' +
+        '<span class="' + (aWins ? 'win' : 'l') + '">' + axis.aName + ' ' + pa + '%</span>' +
+        '<span class="' + (aWins ? 'l' : 'win') + '">' + (100 - pa) + '% ' + axis.bName + '</span>' +
+      '</div>' +
+      '<div class="track"><i class="a" style="width:' + pa + '%"></i>' +
+      '<i class="b" style="width:' + (100 - pa) + '%"></i></div>';
+    box.appendChild(el);
+  });
+}
+
+/* ============================================================
+   집계(통계) — 지금은 목업입니다
+   백엔드가 준비되면 fetchStats() 안쪽만 교체합니다.
+
+   교체 후 모습:
+     async function fetchStats(code) {
+       const res = await fetch(API + '/stats?code=' + code);
+       if (!res.ok) throw new Error('집계를 불러오지 못했습니다');
+       return await res.json();   // { total, count, percent }
+     }
+   ============================================================ */
+const MOCK_STATS = {
+  total: 1284,
+  share: {
+    DPVL: 4.2, DPVS: 5.1, DPAL: 3.8, DPAS: 6.4,
+    DTVL: 5.6, DTVS: 4.7, DTAL: 6.9, DTAS: 9.3,
+    NPVL: 7.8, NPVS: 6.2, NPAL: 5.4, NPAS: 7.1,
+    NTVL: 6.6, NTVS: 4.9, NTAL: 7.4, NTAS: 8.6,
+  },
+};
+
+async function fetchStats(code) {
+  // ★ 목업: 실제 서버 대신 미리 넣어 둔 값을 돌려준다
+  const percent = MOCK_STATS.share[code] ?? 5.0;
+  return {
+    total: MOCK_STATS.total,
+    count: Math.round(MOCK_STATS.total * percent / 100),
+    percent: percent,
+    mock: true,
+  };
+}
+
+async function renderStats(code) {
+  const box = $('stats');
+  box.textContent = '집계를 불러오는 중…';
+  try {
+    const s = await fetchStats(code);
+    box.innerHTML =
+      '지금까지 <b>' + s.total.toLocaleString() + '명</b>이 진단했고, ' +
+      '그중 나와 같은 <b>' + code + '</b> 유형은 ' +
+      '<b>' + s.count.toLocaleString() + '명(' + s.percent + '%)</b>입니다.' +
+      (s.mock ? '<span class="tagmock">목업</span>' : '');
+  } catch (e) {
+    box.textContent = '집계를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+}
+
+/* ---------- 결과 ---------- */
+
+/* 결과 화면을 그린다.
+   tally 가 없으면 = 공유 링크로 들어온 경우이므로 축별 막대는 감춘다
+   (막대는 진단한 사람의 개인 비율이라 링크로는 전달되지 않는다) */
+function showResult(code, tally) {
+  const type = TYPES[code];
+
+  $('code').textContent = code;
+  $('tname').textContent = type.name;
+  $('tline').textContent = type.line;
+  $('strong').textContent = type.strong;
+  $('careful').textContent = type.careful;
+  $('next').textContent = type.next;
+
+  if (tally) {
+    $('meters').hidden = false;
+    renderMeters(tally);
+    $('sharedNote').hidden = true;
+    $('againBtn').textContent = '다시 진단하기';
+    $('copyBtn').hidden = false;
+  } else {
+    $('meters').hidden = true;
+    $('sharedNote').hidden = false;
+    $('againBtn').textContent = '나도 진단해보기';
+    $('copyBtn').hidden = true;
+  }
+
+  renderStats(code);
+  $('barFill').style.width = '100%';
+  show(resultEl);
+}
+
+/* 주소창에 유형 코드를 남겨 링크로 공유할 수 있게 한다.
+   file:// 에서도 안전하도록 해시(#)를 쓴다 */
+function setHash(code) {
+  try { location.hash = code; } catch (e) { /* 무시 */ }
+}
+function clearHash() {
+  try { if (location.hash) location.hash = ''; } catch (e) { /* 무시 */ }
+}
+
+function finish() {
+  const { code, tally } = score();
+  setHash(code);
+  showResult(code, tally);
+}
+
+function restart() {
+  clearHash();
+  index = 0;
+  picks.length = 0;
+  renderQuestion();
+  show(quizEl);
+}
+
+/* ---------- 링크 복사 ---------- */
+function copyLink() {
+  const btn = $('copyBtn');
+  const done = () => {
+    const old = btn.textContent;
+    btn.textContent = '복사됐습니다';
+    setTimeout(() => { btn.textContent = old; }, 1500);
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(location.href).then(done, () => {
+        btn.textContent = '주소창의 링크를 복사해 주세요';
+      });
+      return;
+    }
+  } catch (e) { /* 아래 안내로 넘어간다 */ }
+  btn.textContent = '주소창의 링크를 복사해 주세요';
+}
+
+$('startBtn').addEventListener('click', restart);
+$('backBtn').addEventListener('click', goBack);
+$('againBtn').addEventListener('click', restart);
+$('copyBtn').addEventListener('click', copyLink);
+
+/* 공유 링크(#NPVL 같은 주소)로 들어왔으면 결과 화면부터 보여준다 */
+function openFromHash() {
+  let code = '';
+  try { code = decodeURIComponent(location.hash.replace(/^#/, '')).trim().toUpperCase(); }
+  catch (e) { code = ''; }
+
+  if (code && TYPES[code]) {
+    showResult(code, null);
+    return true;
+  }
+  return false;
+}
+
+openFromHash();
+</script>
+</body>
+</html>

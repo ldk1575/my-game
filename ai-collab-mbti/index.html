@@ -120,9 +120,6 @@
   .stats{margin:1.4rem 0 1.2rem;padding:.9rem 1.05rem;background:var(--card2);
     border:1px dashed var(--line);border-radius:10px;font-size:.9rem;color:var(--muted)}
   .stats b{color:var(--teal)}
-  .stats .tagmock{display:inline-block;font-family:var(--mono);font-size:.62rem;
-    letter-spacing:.1em;color:var(--coral);border:1px solid var(--coral);
-    border-radius:4px;padding:.05rem .3rem;margin-left:.35rem;vertical-align:.1em}
 
   .btns{display:grid;gap:.6rem;margin-top:1.2rem}
   footer{margin-top:1.6rem;text-align:center;font-size:.75rem;color:var(--muted);line-height:1.6}
@@ -453,47 +450,82 @@ function renderMeters(tally) {
 }
 
 /* ============================================================
-   집계(통계) — 지금은 목업입니다
-   백엔드가 준비되면 fetchStats() 안쪽만 교체합니다.
+   집계(통계) — Supabase
 
-   교체 후 모습:
-     async function fetchStats(code) {
-       const res = await fetch(API + '/stats?code=' + code);
-       if (!res.ok) throw new Error('집계를 불러오지 못했습니다');
-       return await res.json();   // { total, count, percent }
-     }
+   결과를 서버에 저장하고, 저장된 것으로 집계를 읽어온다.
+
+   ★ publishable 키는 브라우저에 공개되는 용도다.
+     안전을 담보하는 것은 키가 아니라 데이터베이스의 RLS 정책이다.
+       · 저장(insert)만 허용 — 읽기·수정·삭제 정책은 아예 없음
+       · 코드 형식(DN·PT·VA·LS)이 다르면 서버가 거부한다
+       · 집계는 전용 함수가 숫자 두 개만 돌려준다 (원본 행은 나가지 않음)
+     secret 키는 절대 이 파일에 넣지 않는다.
    ============================================================ */
-const MOCK_STATS = {
-  total: 1284,
-  share: {
-    DPVL: 4.2, DPVS: 5.1, DPAL: 3.8, DPAS: 6.4,
-    DTVL: 5.6, DTVS: 4.7, DTAL: 6.9, DTAS: 9.3,
-    NPVL: 7.8, NPVS: 6.2, NPAL: 5.4, NPAS: 7.1,
-    NTVL: 6.6, NTVS: 4.9, NTAL: 7.4, NTAS: 8.6,
-  },
-};
+const SUPABASE_URL = 'https://qxyaxkvxpnrtcyqppahr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_L7VTeYU48mfIQXEEjsLxpA_XGfLelPY';
 
-async function fetchStats(code) {
-  // ★ 목업: 실제 서버 대신 미리 넣어 둔 값을 돌려준다
-  const percent = MOCK_STATS.share[code] ?? 5.0;
+function apiHeaders() {
   return {
-    total: MOCK_STATS.total,
-    count: Math.round(MOCK_STATS.total * percent / 100),
-    percent: percent,
-    mock: true,
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
   };
 }
 
-async function renderStats(code) {
+/* 내 결과 한 건을 저장한다 */
+async function saveResult(code) {
+  const headers = apiHeaders();
+  headers['Prefer'] = 'return=minimal';
+
+  const res = await fetch(SUPABASE_URL + '/rest/v1/results', {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({ code: code }),
+  });
+  if (!res.ok) throw new Error('결과 저장 실패 ' + res.status);
+}
+
+/* 전체 인원과 내 유형 인원을 읽어온다 */
+async function fetchStats(code) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_stats', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ p_code: code }),
+  });
+  if (!res.ok) throw new Error('집계 조회 실패 ' + res.status);
+
+  const d = await res.json();
+  const total = Number(d.total) || 0;
+  const count = Number(d.count) || 0;
+  return {
+    total: total,
+    count: count,
+    percent: total ? Math.round(count / total * 1000) / 10 : 0,
+  };
+}
+
+/* 집계 영역을 그린다.
+   save 가 true 면(= 내가 직접 진단한 경우) 먼저 결과를 저장한다.
+   공유 링크로 들어온 경우에는 저장하지 않는다 — 남의 결과가 중복 집계되면 안 되니까. */
+async function renderStats(code, save) {
   const box = $('stats');
   box.textContent = '집계를 불러오는 중…';
+
+  if (save) {
+    // 저장이 실패해도 집계는 보여준다
+    try { await saveResult(code); } catch (e) { /* 무시 */ }
+  }
+
   try {
     const s = await fetchStats(code);
+    if (s.total === 0) {
+      box.textContent = '아직 집계된 결과가 없습니다.';
+      return;
+    }
     box.innerHTML =
       '지금까지 <b>' + s.total.toLocaleString() + '명</b>이 진단했고, ' +
       '그중 나와 같은 <b>' + code + '</b> 유형은 ' +
-      '<b>' + s.count.toLocaleString() + '명(' + s.percent + '%)</b>입니다.' +
-      (s.mock ? '<span class="tagmock">목업</span>' : '');
+      '<b>' + s.count.toLocaleString() + '명(' + s.percent + '%)</b>입니다.';
   } catch (e) {
     box.textContent = '집계를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
   }
@@ -527,7 +559,9 @@ function showResult(code, tally) {
     $('copyBtn').hidden = true;
   }
 
-  renderStats(code);
+  // tally 가 있으면 = 내가 직접 진단한 것이므로 결과를 저장한다
+  renderStats(code, Boolean(tally));
+
   $('barFill').style.width = '100%';
   show(resultEl);
 }

@@ -9,9 +9,12 @@
 
 | | 주소 |
 | --- | --- |
-| 플레이하기 | *(GitHub Pages 배포 후 채움)* |
+| **플레이하기** | https://ldk1575.github.io/my-game/ai-collab-mbti/ |
+| 저장소 | https://github.com/ldk1575/my-game/tree/main/ai-collab-mbti |
 | 블로그 포스팅 | *(Blogspot 발행 후 채움)* |
-| 저장소 | *(GitHub 저장소 주소)* |
+
+> 결과가 나오면 주소 끝에 유형 코드가 붙습니다. 예: `…/ai-collab-mbti/#NPVL`
+> 그 링크로 들어오면 해당 유형의 결과 카드가 바로 보입니다.
 
 ---
 

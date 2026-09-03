@@ -10,8 +10,8 @@
 | | 주소 |
 | --- | --- |
 | **플레이하기** | https://ldk1575.github.io/my-game/ai-collab-mbti/ |
+| **블로그 포스팅** | https://sub.purdahub.com/2026/09/ai-collaboration-mbti-test.html |
 | 저장소 | https://github.com/ldk1575/my-game/tree/main/ai-collab-mbti |
-| 블로그 포스팅 | *(Blogspot 발행 후 채움)* |
 
 > 결과가 나오면 주소 끝에 유형 코드가 붙습니다. 예: `…/ai-collab-mbti/#NPVL`
 > 그 링크로 들어오면 해당 유형의 결과 카드가 바로 보입니다.
@@ -158,12 +158,26 @@ async function fetchStats(code) {
 ## 파일 구성
 
 ```
-프로젝트 제출_ 백엔드-화면 뒤에서 일어나는 일들/
-├── index.html    테스트 전체 (HTML + CSS + JavaScript, 외부 라이브러리 없음)
-└── README.md     이 문서
+ai-collab-mbti/
+├── index.html                  테스트 전체 (HTML + CSS + JS, 외부 라이브러리 없음)
+├── README.md                   이 문서
+├── thumbnail.png               블로그 썸네일 1200×630
+├── thumbnail.html              썸네일 원본 (문구 수정 후 다시 캡처)
+├── 블로그_포스팅_가이드.md        제목·퍼머링크·검색설명·라벨·발행 순서
+└── 블로그_본문_붙여넣기.html      포스트 본문에 넣은 텍스트
 ```
 
 `index.html` 하나만 있으면 어디서든 실행됩니다. 파일을 더블클릭해도 열립니다.
+
+썸네일은 `thumbnail.html`을 헤드리스 크롬으로 캡처해 만들었습니다. 문구를 고치려면 HTML을 수정하고 다시 캡처하면 되므로, 이미지 편집 도구가 필요하지 않습니다.
+
+## 블로그에 넣은 방식
+
+포스트 본문에 `index.html` 전체를 붙여넣지 않고 **`iframe`으로 불러왔습니다.**
+
+본문에 `<style>`이 들어가면 그 CSS가 블로그 페이지 전체에 적용됩니다. 이 테스트에는 `body{background:...}`, `button{...}` 같은 전역 선택자가 있어서, 그대로 붙이면 블로그 배경이 검게 변하고 다른 글의 버튼까지 함께 바뀝니다. `iframe`으로 넣으면 테스트의 CSS가 완전히 격리됩니다.
+
+대신 `iframe` 안의 내용은 검색 엔진이 이 글의 내용으로 읽지 않으므로, 도입 문단·축 설명·유형 예시를 **본문 텍스트로 따로** 넣었습니다.
 
 ---
 

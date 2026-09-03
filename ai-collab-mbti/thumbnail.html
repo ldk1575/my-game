@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#0E1117;
+    --ink:#E8ECF3;
+    --muted:#8D97A8;
+    --line:#2A3140;
+    --card:#1A2030;
+    --violet:#8B7CF6;
+    --teal:#3DD6C0;
+    --gold:#F5C25B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1200px;height:630px;overflow:hidden}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR","Malgun Gothic",sans-serif;
+    position:relative;
+  }
+
+  /* 은근한 광원 두 개 */
+  .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.30}
+  .g1{width:620px;height:620px;background:#6D5EE0;top:-260px;left:-160px}
+  .g2{width:560px;height:560px;background:#1E9E8C;bottom:-280px;right:-140px}
+
+  /* 격자 무늬 */
+  .grid{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(139,124,246,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,124,246,.06) 1px, transparent 1px);
+    background-size:48px 48px;
+  }
+
+  .stage{
+    position:relative;
+    width:100%;height:100%;
+    padding:62px 76px;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+
+  /* 상단 라벨 */
+  .kicker{
+    display:inline-flex;align-items:center;gap:12px;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:19px;font-weight:600;letter-spacing:.16em;
+    color:var(--teal);
+  }
+  .kicker .bar{width:44px;height:3px;background:var(--teal);border-radius:2px}
+
+  /* 헤드라인 */
+  h1{
+    font-family:"Black Han Sans","Malgun Gothic",sans-serif;
+    font-size:88px;line-height:1.14;letter-spacing:-.015em;
+    font-weight:400;
+  }
+  h1 .hl{
+    background:linear-gradient(95deg,var(--violet) 10%,var(--teal) 90%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .sub{
+    margin-top:20px;
+    font-size:27px;font-weight:500;color:var(--muted);
+  }
+  .sub b{color:var(--ink);font-weight:700}
+
+  /* 축 칩 */
+  .chips{display:flex;gap:14px}
+  .chip{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px 15px;
+  }
+  .chip .label{
+    font-size:17px;color:var(--muted);font-weight:500;margin-bottom:7px;
+  }
+  .chip .pair{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:30px;font-weight:600;letter-spacing:.06em;
+  }
+  .chip .pair .l{color:var(--violet)}
+  .chip .pair .s{color:var(--line);margin:0 5px}
+  .chip .pair .r{color:var(--teal)}
+
+  /* 하단 줄 */
+  .foot{
+    display:flex;justify-content:space-between;align-items:flex-end;
+  }
+  .cta{
+    display:inline-block;
+    background:linear-gradient(92deg,var(--gold),#F2775F);
+    color:#0E1117;
+    font-size:25px;font-weight:700;
+    padding:15px 30px;border-radius:12px;
+  }
+  /* 결과 예시 (오른쪽 아래) */
+  .sample{text-align:right}
+  .sample .slabel{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:16px;font-weight:500;letter-spacing:.16em;
+    color:var(--muted);margin-bottom:2px;
+  }
+  .sample .scode{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:52px;font-weight:600;letter-spacing:.1em;line-height:1.1;
+    background:linear-gradient(95deg,var(--violet),var(--teal));
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .sample .sname{
+    font-size:21px;font-weight:700;color:var(--ink);margin-top:2px;
+  }
+</style>
+</head>
+<body>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+  <div class="grid"></div>
+
+  <div class="stage">
+
+    <div>
+      <div class="kicker"><span class="bar"></span>AI 협업 성향 진단 · 20문항</div>
+    </div>
+
+    <div>
+      <h1>나는 <span class="hl">AI</span>를<br>어떻게 쓰는 사람일까?</h1>
+      <p class="sub">4가지 축으로 나눈 <b>16가지 AI 협업 유형</b> 중 내 타입 찾기</p>
+    </div>
+
+    <div class="chips">
+      <div class="chip">
+        <div class="label">역할</div>
+        <div class="pair"><span class="l">D</span><span class="s">/</span><span class="r">N</span></div>
+      </div>
+      <div class="chip">
+        <div class="label">착수 방식</div>
+        <div class="pair"><span class="l">P</span><span class="s">/</span><span class="r">T</span></div>
+      </div>
+      <div class="chip">
+        <div class="label">통제 방식</div>
+        <div class="pair"><span class="l">V</span><span class="s">/</span><span class="r">A</span></div>
+      </div>
+      <div class="chip">
+        <div class="label">목적</div>
+        <div class="pair"><span class="l">L</span><span class="s">/</span><span class="r">S</span></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="cta">진단 시작하기 →</span>
+      <div class="sample">
+        <div class="slabel">RESULT</div>
+        <div class="scode">NPVL</div>
+        <div class="sname">명세 쓰는 감독</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -99,6 +99,27 @@
   .tagbar .lbl{font-size:12px;color:var(--soft);font-weight:700;margin-right:4px}
   footer{margin-top:26px;font-size:12px;color:var(--soft);text-align:center;line-height:1.8}
   code{background:var(--accent-soft);color:var(--accent);padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+  /* ── 터치 타겟 넓히기 ──────────────────────────────────────────
+     체크박스는 20px, 삭제 버튼은 25x22 로 손가락에 작다(권장 44px).
+     보이는 크기는 그대로 두고 '누를 수 있는 영역'만 투명하게 넓힌다. */
+  .del{position:relative}
+  .chk::before,.del::before{content:"";position:absolute;inset:-11px}
+
+  /* ── 좁은 화면(휴대폰) ────────────────────────────────────────
+     375px 에서 제목칸이 143px 로 줄어 마감일칸(150px)보다 좁아졌다.
+     한 줄에 나란히 두지 말고 위아래로 쌓는다. */
+  @media (max-width:480px){
+    body{padding:22px 14px 60px}
+    h1{font-size:22px}
+    .row{flex-direction:column}
+    .row > *{width:100%}
+    input[type=date]{flex:none}
+    .chk{flex:0 0 24px;height:24px}
+    li.done .chk::after{left:6px;top:2px;width:6px;height:12px}
+    .del{font-size:22px}
+    .tab{padding:9px 16px}
+  }
 </style>
 </head>
 <body>

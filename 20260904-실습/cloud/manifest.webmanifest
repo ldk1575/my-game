@@ -1,0 +1,30 @@
+{
+  "name": "내 Todo",
+  "short_name": "내 Todo",
+  "description": "할 일을 적고, 마감일과 태그로 정리하는 앱. 링크를 받은 사람마다 자기 목록만 보입니다.",
+  "lang": "ko",
+  "dir": "ltr",
+
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+
+  "background_color": "#f7f8fa",
+  "theme_color": "#1f4e79",
+
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "오늘 할 일",
+      "short_name": "오늘",
+      "url": "./?filter=today",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

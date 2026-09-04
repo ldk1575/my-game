@@ -2,304 +2,414 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>내 Todo 앱 — 클라우드</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 Todo</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f4e79">
+<link rel="icon" href="favicon-64.png" sizes="64x64">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="내 Todo">
+<meta name="mobile-web-app-capable" content="yes">
+
 <style>
   :root{
-    --bg:#f7f8fa; --card:#fff; --ink:#1c1f26; --soft:#6b7280;
+    --bg:#f4f6f9; --card:#fff; --ink:#1c1f26; --soft:#6b7280;
     --line:#e3e7ed; --accent:#1f4e79; --accent-soft:#eaf1f8;
     --rose:#8f2f3c; --rose-soft:#fdeef0; --green:#1f5f45; --green-soft:#eaf5f0;
+    --bar:#1f4e79; --bar-ink:#fff;
+    --shadow:0 2px 10px rgba(20,30,50,.07);
+    --sheet-shadow:0 -8px 32px rgba(20,30,50,.18);
+    --safe-t:env(safe-area-inset-top,0px);
+    --safe-b:env(safe-area-inset-bottom,0px);
   }
-  @media (prefers-color-scheme: dark){
+  @media (prefers-color-scheme:dark){
     :root{
-      --bg:#15181d; --card:#1d2128; --ink:#e8eaee; --soft:#9aa3b2;
-      --line:#2c323b; --accent:#7ab3e8; --accent-soft:#22303d;
-      --rose:#f08a99; --rose-soft:#3a2429; --green:#7fd3ac; --green-soft:#1e3029;
+      --bg:#12151a; --card:#1c2027; --ink:#e8eaee; --soft:#98a1b0;
+      --line:#2a3038; --accent:#7ab3e8; --accent-soft:#202d3a;
+      --rose:#f08a99; --rose-soft:#3a2429; --green:#7fd3ac; --green-soft:#1c2d26;
+      --bar:#161b22; --bar-ink:#e8eaee;
+      --shadow:0 2px 10px rgba(0,0,0,.3);
+      --sheet-shadow:0 -8px 32px rgba(0,0,0,.5);
     }
   }
-  *{box-sizing:border-box}
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
   body{
-    margin:0;padding:32px 20px 80px;background:var(--bg);color:var(--ink);
+    margin:0;background:var(--bg);color:var(--ink);
     font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",system-ui,sans-serif;
-    font-size:15px;line-height:1.6;
+    font-size:15px;line-height:1.55;
+    overscroll-behavior-y:contain;
+    -webkit-user-select:none;user-select:none;
   }
-  .wrap{max-width:640px;margin:0 auto}
+  input{-webkit-user-select:text;user-select:text}
+  .title,.tagchip{-webkit-user-select:text;user-select:text}
 
-  header{margin-bottom:18px}
-  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
-  .sub{color:var(--soft);font-size:13px}
-  .sub b{color:var(--accent)}
+  /* ── 상단 바 (고정) ───────────────────────────────────── */
+  .bar{
+    position:sticky;top:0;z-index:20;
+    background:var(--bar);color:var(--bar-ink);
+    padding:calc(var(--safe-t) + 12px) 16px 0;
+  }
+  .bar-top{display:flex;align-items:center;gap:10px;min-height:34px}
+  .bar h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-.02em;flex:1}
+  .iddot{
+    font-size:10.5px;opacity:.75;font-variant-numeric:tabular-nums;
+    background:rgba(255,255,255,.14);padding:3px 8px;border-radius:20px;
+  }
+  @media (prefers-color-scheme:dark){ .iddot{background:rgba(255,255,255,.08)} }
+  .instbtn{
+    background:rgba(255,255,255,.16);color:var(--bar-ink);border:0;
+    font:inherit;font-size:12px;font-weight:700;padding:6px 11px;
+    border-radius:20px;cursor:pointer;
+  }
+  .segs{display:flex;gap:4px;padding:12px 0 10px}
+  .seg{
+    flex:1;padding:9px 0;border:0;border-radius:9px;cursor:pointer;
+    background:rgba(255,255,255,.12);color:var(--bar-ink);
+    font:inherit;font-size:13.5px;font-weight:700;opacity:.72;
+  }
+  .seg.on{background:var(--bar-ink);color:var(--bar);opacity:1}
+  @media (prefers-color-scheme:dark){
+    .seg{background:rgba(255,255,255,.07)}
+    .seg.on{background:var(--accent);color:#0d1117}
+  }
 
-  .who{
-    background:var(--green-soft);border-left:3px solid var(--green);
-    border-radius:0 7px 7px 0;padding:9px 13px;margin:14px 0 18px;
-    font-size:12.5px;color:var(--ink);line-height:1.65;
-  }
-  .who code{background:transparent;color:var(--green);font-weight:700;font-size:12.5px}
+  /* ── 본문 ────────────────────────────────────────────── */
+  main{padding:14px 16px calc(var(--safe-b) + 108px);max-width:640px;margin:0 auto}
 
-  form{
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:16px;margin-bottom:18px;display:grid;gap:10px;
+  .notice{
+    display:flex;gap:9px;align-items:flex-start;
+    background:var(--green-soft);border-radius:11px;
+    padding:11px 13px;margin-bottom:13px;font-size:12.5px;line-height:1.6;
+    color:var(--ink);
   }
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row > *{min-width:0}
-  input[type=text],input[type=date]{
-    flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:7px;
-    background:var(--bg);color:var(--ink);font:inherit;font-size:14px;
+  .notice b{color:var(--green)}
+  .notice .x{
+    margin-left:auto;background:none;border:0;color:var(--soft);
+    font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto;
   }
-  input[type=date]{flex:0 0 150px}
-  input:focus{outline:2px solid var(--accent);outline-offset:-1px}
-  input::placeholder{color:var(--soft)}
-  button{
-    padding:10px 18px;border:0;border-radius:7px;background:var(--accent);
-    color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer;
-  }
-  button:hover:not(:disabled){filter:brightness(1.1)}
-  button:disabled{opacity:.5;cursor:default}
-  .hint{font-size:12px;color:var(--soft)}
 
-  .tabs{display:flex;gap:6px;margin-bottom:14px}
-  .tab{
-    padding:7px 15px;border:1px solid var(--line);border-radius:20px;
-    background:var(--card);color:var(--soft);font-size:13px;font-weight:700;cursor:pointer;
+  .off{
+    display:none;background:var(--rose-soft);color:var(--rose);
+    border-radius:11px;padding:11px 13px;margin-bottom:13px;
+    font-size:13px;font-weight:700;
   }
-  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  body.offline .off{display:block}
 
-  ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .err{
+    background:var(--rose-soft);color:var(--rose);border-radius:11px;
+    padding:11px 13px;margin-bottom:13px;font-size:13px;font-weight:700;
+  }
+
+  ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
   li{
-    background:var(--card);border:1px solid var(--line);border-radius:9px;
-    padding:12px 14px;display:flex;gap:12px;align-items:flex-start;
+    background:var(--card);border-radius:13px;box-shadow:var(--shadow);
+    padding:14px;display:flex;gap:13px;align-items:flex-start;
   }
-  li.done{opacity:.55}
+  li.done{opacity:.5}
   li.done .title{text-decoration:line-through}
+
   .chk{
-    flex:0 0 20px;height:20px;margin-top:2px;border:2px solid var(--accent);
-    border-radius:5px;background:none;cursor:pointer;padding:0;position:relative;
+    position:relative;flex:0 0 25px;height:25px;margin-top:1px;padding:0;
+    border:2.5px solid var(--accent);border-radius:8px;background:none;cursor:pointer;
   }
   li.done .chk{background:var(--accent)}
   li.done .chk::after{
-    content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
-    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+    content:"";position:absolute;left:6px;top:2px;width:7px;height:13px;
+    border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);
   }
-  .body{flex:1}
-  .title{font-weight:600;word-break:break-all}
-  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
-  .due{font-size:11.5px;padding:2px 8px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+  @media (prefers-color-scheme:dark){ li.done .chk::after{border-color:#0d1117} }
+
+  .body{flex:1;min-width:0}
+  .title{font-weight:600;word-break:break-word;font-size:15px}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center}
+  .due{font-size:11.5px;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700}
   .due.over{background:var(--rose-soft);color:var(--rose)}
-  .tag{font-size:11.5px;padding:2px 8px;border-radius:12px;color:#fff;font-weight:700}
-  .del{flex:0 0 auto;background:none;color:var(--soft);padding:2px 6px;font-size:18px;line-height:1;font-weight:400}
-  .del:hover{color:var(--rose);filter:none}
-
-  .empty{text-align:center;padding:44px 20px;color:var(--soft);font-size:14px;
-    background:var(--card);border:1px dashed var(--line);border-radius:9px}
-  .err{background:var(--rose-soft);color:var(--rose);border:1px solid var(--rose);
-    border-radius:7px;padding:10px 13px;font-size:13.5px;margin-bottom:12px;font-weight:700}
-  .tagbar{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
-    display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  .tagbar .lbl{font-size:12px;color:var(--soft);font-weight:700;margin-right:4px}
-  footer{margin-top:26px;font-size:12px;color:var(--soft);text-align:center;line-height:1.8}
-  code{background:var(--accent-soft);color:var(--accent);padding:1px 5px;border-radius:4px;font-size:11.5px}
-
-  /* ── 터치 타겟 넓히기 ──────────────────────────────────────────
-     체크박스는 20px, 삭제 버튼은 25x22 로 손가락에 작다(권장 44px).
-     보이는 크기는 그대로 두고 '누를 수 있는 영역'만 투명하게 넓힌다. */
-  .del{position:relative}
+  .tagchip{font-size:11.5px;padding:3px 9px;border-radius:20px;color:#fff;font-weight:700}
+  .del{
+    position:relative;flex:0 0 auto;background:none;border:0;color:var(--soft);
+    font-size:21px;line-height:1;cursor:pointer;padding:2px 4px;margin:-2px -4px 0 0;
+  }
+  /* 터치 영역만 투명하게 넓힌다 (보이는 크기는 그대로) */
   .chk::before,.del::before{content:"";position:absolute;inset:-11px}
 
-  /* ── 좁은 화면(휴대폰) ────────────────────────────────────────
-     375px 에서 제목칸이 143px 로 줄어 마감일칸(150px)보다 좁아졌다.
-     한 줄에 나란히 두지 말고 위아래로 쌓는다. */
-  @media (max-width:480px){
-    body{padding:22px 14px 60px}
-    h1{font-size:22px}
-    .row{flex-direction:column}
-    .row > *{width:100%}
-    input[type=date]{flex:none}
-    .chk{flex:0 0 24px;height:24px}
-    li.done .chk::after{left:6px;top:2px;width:6px;height:12px}
-    .del{font-size:22px}
-    .tab{padding:9px 16px}
+  .empty{
+    text-align:center;padding:56px 20px;color:var(--soft);font-size:14px;
+    background:var(--card);border-radius:13px;box-shadow:var(--shadow);
   }
+  .empty .big{font-size:34px;display:block;margin-bottom:10px;opacity:.35}
+
+  .tagbar{
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+    margin-top:18px;padding-top:15px;border-top:1px solid var(--line);
+  }
+  .tagbar .lbl{font-size:11.5px;color:var(--soft);font-weight:700;margin-right:3px}
+
+  /* ── 새 할 일 버튼 (엄지 위치) ─────────────────────────── */
+  .fab{
+    position:fixed;right:18px;bottom:calc(var(--safe-b) + 20px);z-index:25;
+    width:58px;height:58px;border:0;border-radius:19px;cursor:pointer;
+    background:var(--accent);color:#fff;font-size:31px;line-height:1;
+    box-shadow:0 6px 20px rgba(31,78,121,.4);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .14s;
+  }
+  .fab:active{transform:scale(.93)}
+  @media (prefers-color-scheme:dark){ .fab{color:#0d1117;box-shadow:0 6px 20px rgba(0,0,0,.5)} }
+
+  /* ── 아래에서 올라오는 입력 ────────────────────────────── */
+  .backdrop{
+    position:fixed;inset:0;z-index:30;background:rgba(12,18,28,.45);
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  body.sheet-open .backdrop{opacity:1;pointer-events:auto}
+
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:31;
+    background:var(--card);border-radius:20px 20px 0 0;
+    box-shadow:var(--sheet-shadow);
+    padding:8px 18px calc(var(--safe-b) + 18px);
+    transform:translateY(105%);transition:transform .26s cubic-bezier(.22,1,.36,1);
+    max-width:640px;margin:0 auto;
+  }
+  body.sheet-open .sheet{transform:translateY(0)}
+  .handle{width:38px;height:4px;border-radius:4px;background:var(--line);margin:4px auto 14px}
+  .sheet h2{font-size:15.5px;margin:0 0 13px;font-weight:800}
+  .sheet .f{display:grid;gap:10px}
+  input[type=text],input[type=date]{
+    width:100%;padding:14px 14px;border:1.5px solid var(--line);border-radius:11px;
+    background:var(--bg);color:var(--ink);font:inherit;font-size:15px;
+  }
+  input:focus{outline:none;border-color:var(--accent)}
+  input::placeholder{color:var(--soft)}
+  .quick{display:flex;gap:6px}
+  .qbtn{
+    flex:1;padding:9px 0;border:1.5px solid var(--line);border-radius:9px;
+    background:none;color:var(--soft);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .qbtn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .submit{
+    width:100%;padding:15px 0;border:0;border-radius:12px;
+    background:var(--accent);color:#fff;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;
+  }
+  .submit:disabled{opacity:.5}
+  @media (prefers-color-scheme:dark){ .submit{color:#0d1117} }
+  .sheet .hint{font-size:11.5px;color:var(--soft);text-align:center}
+
+  footer{
+    padding:22px 16px calc(var(--safe-b) + 100px);text-align:center;
+    font-size:11px;color:var(--soft);line-height:1.7;max-width:640px;margin:0 auto;
+  }
+  code{font-size:10.5px;background:var(--accent-soft);color:var(--accent);padding:1px 4px;border-radius:4px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>내 Todo 앱 <span style="font-size:13px;color:var(--soft);font-weight:400">클라우드</span></h1>
-    <div class="sub">데이터는 <b>Supabase</b>에 저장됩니다 · 어느 기기에서 열어도 이 링크로 접속합니다</div>
-  </header>
 
-  <div class="who" id="who">연결 중…</div>
+<div class="bar">
+  <div class="bar-top">
+    <h1>내 Todo</h1>
+    <button class="instbtn" id="inst" hidden>홈 화면에 추가</button>
+    <span class="iddot" id="idd">…</span>
+  </div>
+  <div class="segs">
+    <button class="seg on" data-f="all" type="button">전체</button>
+    <button class="seg" data-f="today" type="button">오늘 <span id="tc"></span></button>
+  </div>
+</div>
 
+<main>
+  <div class="off">오프라인입니다 — 연결되면 목록을 다시 불러옵니다</div>
   <div id="err" class="err" hidden></div>
 
-  <form id="f">
-    <div class="row">
-      <input id="title" type="text" placeholder="할 일을 입력하세요" maxlength="200" autocomplete="off" required>
-      <input id="due" type="date">
-    </div>
-    <div class="row">
-      <input id="tags" type="text" placeholder="태그 (쉼표로 구분 — 예: 업무, 긴급)" maxlength="120" autocomplete="off">
-      <button type="submit" id="addBtn">추가</button>
-    </div>
-    <div class="hint">태그는 최대 5개 · 마감일은 비워도 됩니다</div>
-  </form>
-
-  <div class="tabs">
-    <button class="tab on" data-f="all" type="button">전체</button>
-    <button class="tab" data-f="today" type="button">오늘 할 일 <span id="tc"></span></button>
+  <div class="notice" id="notice" hidden>
+    <div>이 링크를 받은 사람은 <b>각자 자기 목록만</b> 봅니다. 브라우저를 바꾸면 다른 사람으로 취급됩니다.</div>
+    <button class="x" id="noticeX" type="button" aria-label="닫기">×</button>
   </div>
 
   <ul id="list"></ul>
   <div id="empty" class="empty" hidden></div>
-
   <div class="tagbar" id="tagbar" hidden><span class="lbl">태그</span></div>
+</main>
 
-  <footer>
-    AI 에이전트 2기 · 2026-09-04 「데이터베이스」 실습 · 길 B (클라우드)<br>
-    표 3개(<code>todos</code> · <code>tags</code> · <code>todo_tags</code>) · 익명 로그인 + RLS · <code>add_todo</code> 트랜잭션
-  </footer>
+<footer>
+  AI 에이전트 2기 · 2026-09-04「데이터베이스」실습<br>
+  <code>todos</code> · <code>tags</code> · <code>todo_tags</code> · 익명 로그인 + RLS
+</footer>
+
+<button class="fab" id="fab" type="button" aria-label="새 할 일">+</button>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="새 할 일">
+  <div class="handle"></div>
+  <h2>새 할 일</h2>
+  <form class="f" id="f">
+    <input id="title" type="text" placeholder="무엇을 할까요?" maxlength="200" autocomplete="off" required>
+    <div class="quick">
+      <button class="qbtn" type="button" data-d="0">오늘</button>
+      <button class="qbtn" type="button" data-d="1">내일</button>
+      <button class="qbtn" type="button" data-d="7">다음 주</button>
+      <button class="qbtn" type="button" data-d="">없음</button>
+    </div>
+    <input id="due" type="date">
+    <input id="tags" type="text" placeholder="태그 — 쉼표로 구분 (예: 업무, 긴급)" maxlength="120" autocomplete="off">
+    <button class="submit" type="submit" id="addBtn">추가</button>
+    <div class="hint">태그는 최대 5개 · 마감일은 비워도 됩니다</div>
+  </form>
 </div>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 /* ============================================================
-   Supabase 연결
-
    publishable(anon) 키를 이 파일에 그대로 둔다. 원래 공개되는 키다.
    안전을 담보하는 것은 키가 아니라 정책(RLS)이다.
-     · 익명 로그인으로 사람마다 고유 user_id 를 받는다
-     · 정책이 auth.uid() = user_id 로 대상을 '내 것'에 한정한다
-     → 여러 사람이 같은 링크를 써도 서로의 할 일에 손댈 수 없다
-
-   secret / service_role 키는 절대 이 파일에 넣지 않는다.
+   secret / service_role 키는 절대 넣지 않는다.
    ============================================================ */
 const SUPABASE_URL = 'https://qxyaxkvxpnrtcyqppahr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L7VTeYU48mfIQXEEjsLxpA_XGfLelPY';
-
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = (s) => document.querySelector(s);
-let filter = 'all';
-let me = null;
+const PALETTE = ['#1f4e79','#8a5a00','#1f5f45','#8f2f3c','#5b3a8a','#0f6674'];
+const colorOf = (n) => { let h=0; for (const c of n) h=(h*31+c.codePointAt(0))%1e9; return PALETTE[h%PALETTE.length]; };
+const pad = (n) => String(n).padStart(2,'0');
+const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => dateStr(new Date());
 
-const todayStr = () => {
-  const d = new Date(), p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+// 홈 화면에서 실행 중인가 (주소창 없는 상태)
+const standalone = matchMedia('(display-mode: standalone)').matches
+  || navigator.standalone === true;
+
+let filter = new URL(location.href).searchParams.get('filter') === 'today' ? 'today' : 'all';
+
+function showErr(m){ const e=$('#err'); if(!m){e.hidden=true;return;} e.textContent=m; e.hidden=false; }
+
+/* ── 아래 시트 열기·닫기 ──────────────────────────────── */
+const openSheet = () => {
+  document.body.classList.add('sheet-open');
+  setTimeout(() => $('#title').focus(), 260);
 };
+const closeSheet = () => {
+  document.body.classList.remove('sheet-open');
+  $('#title').blur();
+  showErr('');
+};
+$('#fab').onclick = openSheet;
+$('#backdrop').onclick = closeSheet;
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
-function showErr(msg){
-  const el = $('#err');
-  if (!msg) { el.hidden = true; return; }
-  el.textContent = msg; el.hidden = false;
+/* ── 마감일 빠른 선택 ────────────────────────────────── */
+for (const b of document.querySelectorAll('.qbtn')){
+  b.onclick = () => {
+    document.querySelectorAll('.qbtn').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    if (b.dataset.d === '') { $('#due').value = ''; return; }
+    const d = new Date();
+    d.setDate(d.getDate() + Number(b.dataset.d));
+    $('#due').value = dateStr(d);
+  };
 }
+$('#due').oninput = () => document.querySelectorAll('.qbtn').forEach(x => x.classList.remove('on'));
 
-/* 로그인 화면 없이 이 브라우저용 신분을 확보한다.
-   세션은 localStorage 에 남아, 다시 열어도 같은 사람으로 이어진다. */
+/* ── 익명 신분 확보 ──────────────────────────────────── */
 async function ensureSession(){
-  const { data: { session } } = await sb.auth.getSession();
+  const { data:{ session } } = await sb.auth.getSession();
   if (session) return session.user;
   const { data, error } = await sb.auth.signInAnonymously();
-  if (error) throw new Error('익명 로그인 실패: ' + error.message);
+  if (error) throw new Error('로그인 실패: ' + error.message);
   return data.user;
 }
 
-const PALETTE = ['#1f4e79','#8a5a00','#1f5f45','#8f2f3c','#5b3a8a','#0f6674'];
-const colorOf = (name) => {
-  let h = 0;
-  for (const ch of name) h = (h * 31 + ch.codePointAt(0)) % 1e9;
-  return PALETTE[h % PALETTE.length];
-};
-
+/* ── 목록 ────────────────────────────────────────────── */
 async function load(){
+  if (document.body.classList.contains('offline')) return;
   try {
     let q = sb.from('todos')
       .select('id,title,is_done,due_date,todo_tags(tags(name,color))')
-      .order('is_done', { ascending: true })
-      .order('due_date', { ascending: true, nullsFirst: false })
-      .order('id', { ascending: false });
-
+      .order('is_done',{ascending:true})
+      .order('due_date',{ascending:true,nullsFirst:false})
+      .order('id',{ascending:false});
     if (filter === 'today') q = q.eq('due_date', todayStr());
 
     const { data, error } = await q;
     if (error) throw new Error(error.message);
 
     const todos = data.map(r => ({
-      id: r.id, title: r.title, isDone: r.is_done, dueDate: r.due_date,
-      tags: (r.todo_tags ?? []).map(x => x.tags).filter(Boolean),
+      id:r.id, title:r.title, isDone:r.is_done, dueDate:r.due_date,
+      tags:(r.todo_tags ?? []).map(x => x.tags).filter(Boolean),
     }));
-
     render(todos);
-    if (filter === 'all') renderTagbar(todos);
-    await refreshTodayCount();
+    renderTags(filter === 'all' ? todos : null);
+    const { count } = await sb.from('todos')
+      .select('id',{count:'exact',head:true})
+      .eq('due_date',todayStr()).eq('is_done',false);
+    $('#tc').textContent = count ? `(${count})` : '';
     showErr('');
-  } catch(e){ showErr(e.message); }
-}
-
-async function refreshTodayCount(){
-  const { count } = await sb.from('todos')
-    .select('id', { count: 'exact', head: true })
-    .eq('due_date', todayStr()).eq('is_done', false);
-  $('#tc').textContent = count ? `(${count})` : '';
+  } catch(e){
+    // 요청 자체가 못 나간 것이면 '오프라인'이라고 알려주는 게 정확하다
+    if (/failed to fetch|networkerror|load failed/i.test(e.message)){
+      document.body.classList.add('offline');
+      showErr('');
+    } else {
+      showErr(e.message);
+    }
+  }
 }
 
 function render(todos){
-  const list = $('#list'), empty = $('#empty');
-  list.textContent = '';
-  const today = todayStr();
-
+  const list=$('#list'), empty=$('#empty'), today=todayStr();
+  list.textContent='';
   if (!todos.length){
-    empty.hidden = false;
-    empty.textContent = filter === 'today'
-      ? '오늘 마감인 할 일이 없습니다.'
-      : '아직 할 일이 없습니다. 위에서 추가해 보세요.';
+    empty.hidden=false;
+    empty.innerHTML = filter==='today'
+      ? '<span class="big">☀</span>오늘 마감인 할 일이 없습니다.'
+      : '<span class="big">✓</span>할 일이 없습니다.<br>아래 <b>+</b> 를 눌러 추가해 보세요.';
     return;
   }
-  empty.hidden = true;
+  empty.hidden=true;
 
   for (const t of todos){
-    const li = document.createElement('li');
-    if (t.isDone) li.className = 'done';
+    const li=document.createElement('li');
+    if (t.isDone) li.className='done';
 
-    const chk = document.createElement('button');
-    chk.className = 'chk'; chk.type = 'button';
-    chk.setAttribute('aria-label', t.isDone ? '완료 취소' : '완료 표시');
+    const chk=document.createElement('button');
+    chk.className='chk'; chk.type='button';
+    chk.setAttribute('aria-label', t.isDone?'완료 취소':'완료 표시');
     chk.onclick = async () => {
       const { error } = await sb.from('todos').update({ is_done: !t.isDone }).eq('id', t.id);
       if (error) showErr(error.message); else load();
     };
 
-    const body = document.createElement('div');
-    body.className = 'body';
-    const title = document.createElement('div');
-    title.className = 'title';
-    title.textContent = t.title;          // textContent — 입력을 HTML로 해석하지 않는다
+    const body=document.createElement('div'); body.className='body';
+    const title=document.createElement('div'); title.className='title';
+    title.textContent=t.title;              // textContent — 입력을 HTML로 해석하지 않는다
     body.append(title);
 
     if (t.dueDate || t.tags.length){
-      const meta = document.createElement('div');
-      meta.className = 'meta';
+      const meta=document.createElement('div'); meta.className='meta';
       if (t.dueDate){
-        const d = document.createElement('span');
-        const over = !t.isDone && t.dueDate < today;
-        d.className = 'due' + (over ? ' over' : '');
-        d.textContent = (over ? '지남 · ' : '') + t.dueDate;
+        const d=document.createElement('span');
+        const over=!t.isDone && t.dueDate<today;
+        d.className='due'+(over?' over':'');
+        d.textContent=(over?'지남 · ':'')+t.dueDate;
         meta.append(d);
       }
-      for (const tag of t.tags){
-        const s = document.createElement('span');
-        s.className = 'tag';
-        s.style.background = tag.color || colorOf(tag.name);
-        s.textContent = '#' + tag.name;
-        meta.append(s);
+      for (const g of t.tags){
+        const s=document.createElement('span'); s.className='tagchip';
+        s.style.background=g.color||colorOf(g.name);
+        s.textContent='#'+g.name; meta.append(s);
       }
       body.append(meta);
     }
 
-    const del = document.createElement('button');
-    del.className = 'del'; del.type = 'button'; del.textContent = '×';
-    del.setAttribute('aria-label', '삭제');
+    const del=document.createElement('button');
+    del.className='del'; del.type='button'; del.textContent='×';
+    del.setAttribute('aria-label','삭제');
     del.onclick = async () => {
       const { error } = await sb.from('todos').delete().eq('id', t.id);
       if (error) showErr(error.message); else load();
@@ -310,66 +420,104 @@ function render(todos){
   }
 }
 
-function renderTagbar(todos){
-  const bar = $('#tagbar');
-  const counts = new Map();
+function renderTags(todos){
+  const bar=$('#tagbar');
+  if (!todos){ bar.hidden=true; return; }
+  const m=new Map();
   for (const t of todos) for (const g of t.tags){
-    const k = g.name;
-    counts.set(k, { color: g.color || colorOf(k), n: (counts.get(k)?.n ?? 0) + 1 });
+    m.set(g.name, { color:g.color||colorOf(g.name), n:(m.get(g.name)?.n ?? 0)+1 });
   }
-  bar.textContent = '';
-  if (!counts.size){ bar.hidden = true; return; }
-  const lbl = document.createElement('span');
-  lbl.className = 'lbl'; lbl.textContent = '태그';
-  bar.append(lbl);
-  for (const [name, v] of [...counts].sort((a,b) => b[1].n - a[1].n)){
-    const s = document.createElement('span');
-    s.className = 'tag'; s.style.background = v.color;
-    s.textContent = `#${name} ${v.n}`;
-    bar.append(s);
+  bar.textContent='';
+  if (!m.size){ bar.hidden=true; return; }
+  const l=document.createElement('span'); l.className='lbl'; l.textContent='태그'; bar.append(l);
+  for (const [name,v] of [...m].sort((a,b)=>b[1].n-a[1].n)){
+    const s=document.createElement('span'); s.className='tagchip';
+    s.style.background=v.color; s.textContent=`#${name} ${v.n}`; bar.append(s);
   }
-  bar.hidden = false;
+  bar.hidden=false;
 }
 
+/* ── 추가 ────────────────────────────────────────────── */
 $('#f').onsubmit = async (ev) => {
   ev.preventDefault();
-  const btn = $('#addBtn');
-  btn.disabled = true;
+  const btn=$('#addBtn'); btn.disabled=true;
   try {
-    const tags = $('#tags').value.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
-    // add_todo 는 서버 함수다 → 할 일+태그+연결이 하나의 트랜잭션으로 처리된다
+    const tags=$('#tags').value.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+    // add_todo 는 서버 함수 → 할 일+태그+연결이 하나의 트랜잭션으로 처리된다
     const { error } = await sb.rpc('add_todo', {
-      p_title: $('#title').value,
-      p_due:   $('#due').value || null,
-      p_tags:  tags,
+      p_title:$('#title').value, p_due:$('#due').value||null, p_tags:tags,
     });
     if (error) throw new Error(error.message);
-    $('#title').value = ''; $('#tags').value = '';
-    showErr(''); await load(); $('#title').focus();
+    $('#title').value=''; $('#tags').value=''; $('#due').value='';
+    document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('on'));
+    closeSheet(); await load();
   } catch(e){ showErr(e.message); }
-  finally { btn.disabled = false; }
+  finally { btn.disabled=false; }
 };
 
-for (const b of document.querySelectorAll('.tab')){
+/* ── 탭 ──────────────────────────────────────────────── */
+for (const b of document.querySelectorAll('.seg')){
   b.onclick = () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    filter = b.dataset.f;
-    load();
+    document.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); filter=b.dataset.f; load();
   };
 }
+if (filter === 'today'){
+  document.querySelectorAll('.seg').forEach(x=>x.classList.toggle('on', x.dataset.f==='today'));
+}
 
-/* ── 시작 ───────────────────────────────────────────────────── */
+/* ── 오프라인 표시 ───────────────────────────────────────
+   navigator.onLine 은 '네트워크 인터페이스가 있는지'만 알려줘서
+   와이파이에 붙어 있고 인터넷은 안 되는 상황을 못 잡는다.
+   그래서 ① 이벤트를 직접 신뢰하고 ② 요청이 실제로 실패하면 그때도 표시한다. */
+const setOnline = (on) => {
+  document.body.classList.toggle('offline', !on);
+  if (on) load();
+};
+addEventListener('online',  () => setOnline(true));
+addEventListener('offline', () => setOnline(false));
+
+/* ── 홈 화면에 추가 버튼 ─────────────────────────────── */
+let installEvent = null;
+addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); installEvent = e;
+  if (!standalone) $('#inst').hidden = false;
+});
+$('#inst').onclick = async () => {
+  if (!installEvent) return;
+  $('#inst').hidden = true;
+  installEvent.prompt();
+  await installEvent.userChoice;
+  installEvent = null;
+};
+addEventListener('appinstalled', () => { $('#inst').hidden = true; });
+
+/* ── 안내 문구 — 홈 화면 실행이면 숨긴다 ─────────────── */
+if (!standalone && localStorage.getItem('noticeHidden') !== '1'){
+  $('#notice').hidden = false;
+}
+$('#noticeX').onclick = () => {
+  $('#notice').hidden = true;
+  try { localStorage.setItem('noticeHidden','1'); } catch {}
+};
+
+/* ── Service Worker — 껍데기를 캐시해 오프라인에서도 뜨게 ── */
+// isSecureContext — https 와 localhost 가 여기 해당한다.
+// Service Worker 는 보안 컨텍스트에서만 등록된다.
+if ('serviceWorker' in navigator && isSecureContext){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* ── 시작 ────────────────────────────────────────────── */
+document.body.classList.toggle('offline', !navigator.onLine);
 try {
-  me = await ensureSession();
-  $('#who').innerHTML =
-    `이 브라우저의 익명 ID · <code>${me.id.slice(0, 8)}…</code><br>` +
-    `이 링크를 다른 사람에게 줘도 <b>각자 자기 목록만</b> 보입니다. ` +
-    `브라우저를 바꾸면 다른 사람으로 취급됩니다.`;
+  const me = await ensureSession();
+  $('#idd').textContent = me.id.slice(0,6);
+  $('#idd').title = '이 브라우저의 익명 ID: ' + me.id;
   await load();
-} catch (e) {
-  $('#who').textContent = '연결 실패';
-  showErr(e.message + ' — Supabase 대시보드에서 Anonymous sign-ins 가 켜져 있는지 확인하세요.');
+} catch(e){
+  $('#idd').textContent = '—';
+  showErr(e.message);
 }
 </script>
 </body>

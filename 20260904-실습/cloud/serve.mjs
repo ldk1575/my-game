@@ -21,6 +21,12 @@ const MIME = {
   '.mjs':  'text/javascript; charset=utf-8',
   '.sql':  'text/plain; charset=utf-8',
   '.svg':  'image/svg+xml',
+  '.png':  'image/png',
+  '.ico':  'image/x-icon',
+  // manifest 는 이 MIME 이어야 브라우저가 PWA 매니페스트로 인식한다
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.md':   'text/plain; charset=utf-8',
 };
 
 createServer(async (req, res) => {

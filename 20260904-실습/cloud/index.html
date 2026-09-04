@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 Todo 앱 — 클라우드</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#1c1f26; --soft:#6b7280;
+    --line:#e3e7ed; --accent:#1f4e79; --accent-soft:#eaf1f8;
+    --rose:#8f2f3c; --rose-soft:#fdeef0; --green:#1f5f45; --green-soft:#eaf5f0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#15181d; --card:#1d2128; --ink:#e8eaee; --soft:#9aa3b2;
+      --line:#2c323b; --accent:#7ab3e8; --accent-soft:#22303d;
+      --rose:#f08a99; --rose-soft:#3a2429; --green:#7fd3ac; --green-soft:#1e3029;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:32px 20px 80px;background:var(--bg);color:var(--ink);
+    font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",system-ui,sans-serif;
+    font-size:15px;line-height:1.6;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+
+  header{margin-bottom:18px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--soft);font-size:13px}
+  .sub b{color:var(--accent)}
+
+  .who{
+    background:var(--green-soft);border-left:3px solid var(--green);
+    border-radius:0 7px 7px 0;padding:9px 13px;margin:14px 0 18px;
+    font-size:12.5px;color:var(--ink);line-height:1.65;
+  }
+  .who code{background:transparent;color:var(--green);font-weight:700;font-size:12.5px}
+
+  form{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:16px;margin-bottom:18px;display:grid;gap:10px;
+  }
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row > *{min-width:0}
+  input[type=text],input[type=date]{
+    flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:7px;
+    background:var(--bg);color:var(--ink);font:inherit;font-size:14px;
+  }
+  input[type=date]{flex:0 0 150px}
+  input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  input::placeholder{color:var(--soft)}
+  button{
+    padding:10px 18px;border:0;border-radius:7px;background:var(--accent);
+    color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer;
+  }
+  button:hover:not(:disabled){filter:brightness(1.1)}
+  button:disabled{opacity:.5;cursor:default}
+  .hint{font-size:12px;color:var(--soft)}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tab{
+    padding:7px 15px;border:1px solid var(--line);border-radius:20px;
+    background:var(--card);color:var(--soft);font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  li{
+    background:var(--card);border:1px solid var(--line);border-radius:9px;
+    padding:12px 14px;display:flex;gap:12px;align-items:flex-start;
+  }
+  li.done{opacity:.55}
+  li.done .title{text-decoration:line-through}
+  .chk{
+    flex:0 0 20px;height:20px;margin-top:2px;border:2px solid var(--accent);
+    border-radius:5px;background:none;cursor:pointer;padding:0;position:relative;
+  }
+  li.done .chk{background:var(--accent)}
+  li.done .chk::after{
+    content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+  .body{flex:1}
+  .title{font-weight:600;word-break:break-all}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+  .due{font-size:11.5px;padding:2px 8px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .due.over{background:var(--rose-soft);color:var(--rose)}
+  .tag{font-size:11.5px;padding:2px 8px;border-radius:12px;color:#fff;font-weight:700}
+  .del{flex:0 0 auto;background:none;color:var(--soft);padding:2px 6px;font-size:18px;line-height:1;font-weight:400}
+  .del:hover{color:var(--rose);filter:none}
+
+  .empty{text-align:center;padding:44px 20px;color:var(--soft);font-size:14px;
+    background:var(--card);border:1px dashed var(--line);border-radius:9px}
+  .err{background:var(--rose-soft);color:var(--rose);border:1px solid var(--rose);
+    border-radius:7px;padding:10px 13px;font-size:13.5px;margin-bottom:12px;font-weight:700}
+  .tagbar{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .tagbar .lbl{font-size:12px;color:var(--soft);font-weight:700;margin-right:4px}
+  footer{margin-top:26px;font-size:12px;color:var(--soft);text-align:center;line-height:1.8}
+  code{background:var(--accent-soft);color:var(--accent);padding:1px 5px;border-radius:4px;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>내 Todo 앱 <span style="font-size:13px;color:var(--soft);font-weight:400">클라우드</span></h1>
+    <div class="sub">데이터는 <b>Supabase</b>에 저장됩니다 · 어느 기기에서 열어도 이 링크로 접속합니다</div>
+  </header>
+
+  <div class="who" id="who">연결 중…</div>
+
+  <div id="err" class="err" hidden></div>
+
+  <form id="f">
+    <div class="row">
+      <input id="title" type="text" placeholder="할 일을 입력하세요" maxlength="200" autocomplete="off" required>
+      <input id="due" type="date">
+    </div>
+    <div class="row">
+      <input id="tags" type="text" placeholder="태그 (쉼표로 구분 — 예: 업무, 긴급)" maxlength="120" autocomplete="off">
+      <button type="submit" id="addBtn">추가</button>
+    </div>
+    <div class="hint">태그는 최대 5개 · 마감일은 비워도 됩니다</div>
+  </form>
+
+  <div class="tabs">
+    <button class="tab on" data-f="all" type="button">전체</button>
+    <button class="tab" data-f="today" type="button">오늘 할 일 <span id="tc"></span></button>
+  </div>
+
+  <ul id="list"></ul>
+  <div id="empty" class="empty" hidden></div>
+
+  <div class="tagbar" id="tagbar" hidden><span class="lbl">태그</span></div>
+
+  <footer>
+    AI 에이전트 2기 · 2026-09-04 「데이터베이스」 실습 · 길 B (클라우드)<br>
+    표 3개(<code>todos</code> · <code>tags</code> · <code>todo_tags</code>) · 익명 로그인 + RLS · <code>add_todo</code> 트랜잭션
+  </footer>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+/* ============================================================
+   Supabase 연결
+
+   publishable(anon) 키를 이 파일에 그대로 둔다. 원래 공개되는 키다.
+   안전을 담보하는 것은 키가 아니라 정책(RLS)이다.
+     · 익명 로그인으로 사람마다 고유 user_id 를 받는다
+     · 정책이 auth.uid() = user_id 로 대상을 '내 것'에 한정한다
+     → 여러 사람이 같은 링크를 써도 서로의 할 일에 손댈 수 없다
+
+   secret / service_role 키는 절대 이 파일에 넣지 않는다.
+   ============================================================ */
+const SUPABASE_URL = 'https://qxyaxkvxpnrtcyqppahr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_L7VTeYU48mfIQXEEjsLxpA_XGfLelPY';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s) => document.querySelector(s);
+let filter = 'all';
+let me = null;
+
+const todayStr = () => {
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+function showErr(msg){
+  const el = $('#err');
+  if (!msg) { el.hidden = true; return; }
+  el.textContent = msg; el.hidden = false;
+}
+
+/* 로그인 화면 없이 이 브라우저용 신분을 확보한다.
+   세션은 localStorage 에 남아, 다시 열어도 같은 사람으로 이어진다. */
+async function ensureSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return session.user;
+  const { data, error } = await sb.auth.signInAnonymously();
+  if (error) throw new Error('익명 로그인 실패: ' + error.message);
+  return data.user;
+}
+
+const PALETTE = ['#1f4e79','#8a5a00','#1f5f45','#8f2f3c','#5b3a8a','#0f6674'];
+const colorOf = (name) => {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.codePointAt(0)) % 1e9;
+  return PALETTE[h % PALETTE.length];
+};
+
+async function load(){
+  try {
+    let q = sb.from('todos')
+      .select('id,title,is_done,due_date,todo_tags(tags(name,color))')
+      .order('is_done', { ascending: true })
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: false });
+
+    if (filter === 'today') q = q.eq('due_date', todayStr());
+
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const todos = data.map(r => ({
+      id: r.id, title: r.title, isDone: r.is_done, dueDate: r.due_date,
+      tags: (r.todo_tags ?? []).map(x => x.tags).filter(Boolean),
+    }));
+
+    render(todos);
+    if (filter === 'all') renderTagbar(todos);
+    await refreshTodayCount();
+    showErr('');
+  } catch(e){ showErr(e.message); }
+}
+
+async function refreshTodayCount(){
+  const { count } = await sb.from('todos')
+    .select('id', { count: 'exact', head: true })
+    .eq('due_date', todayStr()).eq('is_done', false);
+  $('#tc').textContent = count ? `(${count})` : '';
+}
+
+function render(todos){
+  const list = $('#list'), empty = $('#empty');
+  list.textContent = '';
+  const today = todayStr();
+
+  if (!todos.length){
+    empty.hidden = false;
+    empty.textContent = filter === 'today'
+      ? '오늘 마감인 할 일이 없습니다.'
+      : '아직 할 일이 없습니다. 위에서 추가해 보세요.';
+    return;
+  }
+  empty.hidden = true;
+
+  for (const t of todos){
+    const li = document.createElement('li');
+    if (t.isDone) li.className = 'done';
+
+    const chk = document.createElement('button');
+    chk.className = 'chk'; chk.type = 'button';
+    chk.setAttribute('aria-label', t.isDone ? '완료 취소' : '완료 표시');
+    chk.onclick = async () => {
+      const { error } = await sb.from('todos').update({ is_done: !t.isDone }).eq('id', t.id);
+      if (error) showErr(error.message); else load();
+    };
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = t.title;          // textContent — 입력을 HTML로 해석하지 않는다
+    body.append(title);
+
+    if (t.dueDate || t.tags.length){
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      if (t.dueDate){
+        const d = document.createElement('span');
+        const over = !t.isDone && t.dueDate < today;
+        d.className = 'due' + (over ? ' over' : '');
+        d.textContent = (over ? '지남 · ' : '') + t.dueDate;
+        meta.append(d);
+      }
+      for (const tag of t.tags){
+        const s = document.createElement('span');
+        s.className = 'tag';
+        s.style.background = tag.color || colorOf(tag.name);
+        s.textContent = '#' + tag.name;
+        meta.append(s);
+      }
+      body.append(meta);
+    }
+
+    const del = document.createElement('button');
+    del.className = 'del'; del.type = 'button'; del.textContent = '×';
+    del.setAttribute('aria-label', '삭제');
+    del.onclick = async () => {
+      const { error } = await sb.from('todos').delete().eq('id', t.id);
+      if (error) showErr(error.message); else load();
+    };
+
+    li.append(chk, body, del);
+    list.append(li);
+  }
+}
+
+function renderTagbar(todos){
+  const bar = $('#tagbar');
+  const counts = new Map();
+  for (const t of todos) for (const g of t.tags){
+    const k = g.name;
+    counts.set(k, { color: g.color || colorOf(k), n: (counts.get(k)?.n ?? 0) + 1 });
+  }
+  bar.textContent = '';
+  if (!counts.size){ bar.hidden = true; return; }
+  const lbl = document.createElement('span');
+  lbl.className = 'lbl'; lbl.textContent = '태그';
+  bar.append(lbl);
+  for (const [name, v] of [...counts].sort((a,b) => b[1].n - a[1].n)){
+    const s = document.createElement('span');
+    s.className = 'tag'; s.style.background = v.color;
+    s.textContent = `#${name} ${v.n}`;
+    bar.append(s);
+  }
+  bar.hidden = false;
+}
+
+$('#f').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const btn = $('#addBtn');
+  btn.disabled = true;
+  try {
+    const tags = $('#tags').value.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
+    // add_todo 는 서버 함수다 → 할 일+태그+연결이 하나의 트랜잭션으로 처리된다
+    const { error } = await sb.rpc('add_todo', {
+      p_title: $('#title').value,
+      p_due:   $('#due').value || null,
+      p_tags:  tags,
+    });
+    if (error) throw new Error(error.message);
+    $('#title').value = ''; $('#tags').value = '';
+    showErr(''); await load(); $('#title').focus();
+  } catch(e){ showErr(e.message); }
+  finally { btn.disabled = false; }
+};
+
+for (const b of document.querySelectorAll('.tab')){
+  b.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    filter = b.dataset.f;
+    load();
+  };
+}
+
+/* ── 시작 ───────────────────────────────────────────────────── */
+try {
+  me = await ensureSession();
+  $('#who').innerHTML =
+    `이 브라우저의 익명 ID · <code>${me.id.slice(0, 8)}…</code><br>` +
+    `이 링크를 다른 사람에게 줘도 <b>각자 자기 목록만</b> 보입니다. ` +
+    `브라우저를 바꾸면 다른 사람으로 취급됩니다.`;
+  await load();
+} catch (e) {
+  $('#who').textContent = '연결 실패';
+  showErr(e.message + ' — Supabase 대시보드에서 Anonymous sign-ins 가 켜져 있는지 확인하세요.');
+}
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 // ★ 캐시 이름에 버전을 붙인다. 파일을 고치면 이 숫자를 올려야
 //   사용자에게 새 화면이 간다. 안 올리면 옛 화면이 계속 나온다.
 
-const CACHE = 'todo-shell-v2';
+const CACHE = 'todo-shell-v3';
 
 const SHELL = [
   './',

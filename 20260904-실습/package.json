@@ -1,0 +1,13 @@
+{
+  "name": "my-todo-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI에이전트 2기 · 데이터베이스 노드 실습 (길 A: 로컬 SQLite)",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "inspect": "node inspect.js",
+    "reset": "node -e \"import('node:fs').then(fs=>{try{fs.unlinkSync('todo.db');console.log('todo.db 삭제됨')}catch{console.log('todo.db 없음')}})\""
+  }
+}

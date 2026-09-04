@@ -52,6 +52,7 @@ iOS는 **Chrome이 아니라 Safari로 열어야** 추가됩니다.
 | `sw.js` | Service Worker — 앱 껍데기 캐시 |
 | `make-icons.py` | 아이콘 생성 (`python make-icons.py`, Pillow 필요) |
 | `icon-192/512/maskable`, `apple-touch-icon`, `favicon-64` | 아이콘 |
+| `vendor/supabase.js` | **supabase-js 라이브러리(208KB)** — CDN 대신 여기서 불러온다 |
 | `serve.mjs` | 로컬 확인용 정적 서버 |
 
 ## 무엇을 넣었나
@@ -60,7 +61,7 @@ iOS는 **Chrome이 아니라 Safari로 열어야** 추가됩니다.
 |---|---|
 | `manifest.webmanifest` | 홈 화면 추가와 전체화면 실행의 조건 |
 | **maskable 아이콘** | 안드로이드가 원·사각 등 임의 모양으로 잘라내므로, 그림을 가운데 안쪽에만 뒀다 |
-| `sw.js` | 껍데기 6개 파일을 캐시 → 연결이 느리거나 없어도 앱이 **바로** 뜬다 |
+| `sw.js` | 껍데기 7개 파일(라이브러리 포함)을 캐시 → 연결이 느리거나 없어도 앱이 **바로** 뜬다 |
 | `viewport-fit=cover` + `env(safe-area-inset-*)` | 아이폰 노치·홈바에 내용이 가리지 않게 |
 | `beforeinstallprompt` | 헤더의 `홈 화면에 추가` 버튼 — 설치법을 사용자가 찾지 않아도 되게 |
 | `display-mode: standalone` 감지 | 홈 화면에서 실행 중이면 설명 배너를 숨긴다 |
@@ -95,7 +96,7 @@ iOS는 **Chrome이 아니라 Safari로 열어야** 추가됩니다.
 ## ⚠️ 파일을 고치면 `sw.js` 의 캐시 버전을 올려야 합니다
 
 ```js
-const CACHE = 'todo-shell-v3';   // ← 이 숫자
+const CACHE = 'todo-shell-v4';   // ← 이 숫자
 ```
 
 안 올리면 사용자에게 **옛 화면이 계속 나옵니다.** Service Worker가 캐시를 먼저 주기 때문입니다.

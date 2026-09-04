@@ -5,8 +5,8 @@
   "lang": "ko",
   "dir": "ltr",
 
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
 
